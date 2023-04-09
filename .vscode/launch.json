@@ -8,7 +8,7 @@
         "preLaunchTask": "build-api",
         //bin/Debug/net6.0/MyWebApp.dll
         //specify ${workspaceFolder} so nick can run
-        "program": "/Users/cmvallat/Desktop/Side_Projects/aws-live-project/aws-live-backend/party-push-backend/src/Api/Api.csproj",
+        "program": "${workspaceFolder}/src/Api/bin/Debug/net6.0/Api.dll",
         "args": [],
         "cwd": "${workspaceFolder}",
         "stopAtEntry": false,
