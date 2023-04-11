@@ -29,8 +29,7 @@ namespace Api.DemoController
             //string connString = await GetSecret();
 
             // Set up connection string with server, database, user, and password
-            //string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
-            string connString = "server=party-resources.crurrv9mzw4i.us-west-1.rds.amazonaws.com;port=3306;database=Party;user=cmvallat;password=Gdtbath21";
+            string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
 
             // Create and open the connection to the db
             MySqlConnection conn = new MySqlConnection(connString);
@@ -72,8 +71,7 @@ namespace Api.DemoController
             //string connString = await GetSecret();
 
             // Set up connection string with server, database, user, and password
-            //string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
-            string connString = "server=party-resources.crurrv9mzw4i.us-west-1.rds.amazonaws.com;port=3306;database=Party;user=cmvallat;password=Gdtbath21";
+            string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
 
             // Create and open the connection to the db
             MySqlConnection conn = new MySqlConnection(connString);
