@@ -104,6 +104,126 @@ namespace Api.DemoController
             
         }
 
+        [HttpGet("get-host")]
+        // Todo: change from async to sync
+        public async Task<IActionResult> GetHostByPartyCode([Required] string party_code)
+        {
+            //Eventually store in Secrets Manager when EC2 is up and running
+            //then get the secret from the commented out function
+            //string connString = await GetSecret();
+
+            // Set up connection string with server, database, user, and password
+            string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
+            
+            // Create and open the connection to the db
+            MySqlConnection conn = new MySqlConnection(connString);
+            conn.Open();
+
+            // Create the SQL statements you want to execute
+            // Todo: LIMIT-ing 1 right now; need to make party_code UNIQUE in db so there is no other option
+            var hostSelectStatement = "SELECT * FROM Host WHERE party_code = @party_code LIMIT 1;";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(hostSelectStatement, conn);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+
+            // Execute the command and get the number of rows affected, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            HostObjectModel returnedObj = new HostObjectModel();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    //map response properties to returned object
+                    returnedObj.party_name = reader.GetString("party_name");
+                    returnedObj.party_code = reader.GetString("party_code");
+                    returnedObj.phone_number = reader.GetString("phone_number");
+                    returnedObj.spotify_device_id = reader.GetString("spotify_device_id");
+                    returnedObj.invite_only = reader.GetInt32("invite_only");
+                }
+            }
+            conn.Close();
+            
+            //if something was added to the db, return success
+            if(returnedObj != null)
+            {
+                return Ok(returnedObj);
+            }
+            
+            //if nothing was added to the db, return error
+            return StatusCode(500, new { message = "Failed to get from db" });
+            
+        }
+
+        [HttpGet("get-guest")]
+        // Todo: change from async to sync
+        public async Task<IActionResult> GetGuestByNameAndCode([Required] string guest_name, [Required] string party_code)
+        {
+            //Eventually store in Secrets Manager when EC2 is up and running
+            //then get the secret from the commented out function
+            //string connString = await GetSecret();
+
+            // Set up connection string with server, database, user, and password
+            string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
+            
+            // Create and open the connection to the db
+            MySqlConnection conn = new MySqlConnection(connString);
+            conn.Open();
+
+            // Create the SQL statements you want to execute
+            // Todo: LIMIT-ing 1 right now; need to make party_code and guest_name UNIQUE in db so there is no other option
+            var guestSelectStatement = "SELECT * FROM Guest WHERE guest_name = @guest_name && party_code = @party_code LIMIT 1;";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(guestSelectStatement, conn);
+            cmd.Parameters.AddWithValue("@guest_name", guest_name);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+
+            // Execute the command and get the number of rows affected, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            GuestObjectModel returnedObj = new GuestObjectModel();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    //map response properties to returned object
+                    returnedObj.guest_name = reader.GetString("guest_name");
+                    returnedObj.party_code = reader.GetString("party_code");
+                    returnedObj.at_party = reader.GetInt32("at_party");
+                }
+            }
+            conn.Close();
+            
+            //if something was added to the db, return success
+            if(returnedObj != null)
+            {
+                return Ok(returnedObj);
+            }
+            
+            //if nothing was added to the db, return error
+            return StatusCode(500, new { message = "Failed to get from db" });
+            
+        }
+
+        // eventually move into not accepting parameters, but just a single object for upserts?
+        public class HostObjectModel
+        {
+            public string party_name { get; set; }
+            public string party_code { get; set; }
+            public string phone_number { get; set; }
+            public string spotify_device_id { get; set; }
+            public int invite_only { get; set; }
+        }
+
+        public class GuestObjectModel
+        {
+            public string guest_name { get; set; }
+            public string party_code { get; set; }
+            public int at_party { get; set; }
+        }
+
         // un-comment this function when EC2 is up so we can test secret - only works on EC2, not locally
         // static async Task<string> GetSecret()
         // {
