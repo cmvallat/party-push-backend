@@ -127,7 +127,7 @@ namespace Api.DemoController
             MySqlCommand cmd = new MySqlCommand(hostSelectStatement, conn);
             cmd.Parameters.AddWithValue("@party_code", party_code);
 
-            // Execute the command and get the number of rows affected, then close the connection
+            // Execute the command and return the object, then close the connection
             // Todo: wrap in try block and handle errors in catch
             HostObjectModel returnedObj = new HostObjectModel();
 
@@ -180,7 +180,7 @@ namespace Api.DemoController
             cmd.Parameters.AddWithValue("@guest_name", guest_name);
             cmd.Parameters.AddWithValue("@party_code", party_code);
 
-            // Execute the command and get the number of rows affected, then close the connection
+            // Execute the command and return the object, then close the connection
             // Todo: wrap in try block and handle errors in catch
             GuestObjectModel returnedObj = new GuestObjectModel();
 
