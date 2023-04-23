@@ -22,11 +22,17 @@ namespace Api.DemoController
         //right now the controller has logic in it - eventually move to command
         [HttpPost("upsert-host")]
         // Todo: change from async to sync
-        public async Task<IActionResult> UpsertHost([Required] string party_name, [Required] string party_code, [Required] string phone_number, [Required] string spotify_device_id, [Required] int invite_only )
+        public async Task<IActionResult> UpsertHost([Required][FromBody] HostObjectModel host)
         {
             //Eventually store in Secrets Manager when EC2 is up and running
             //then get the secret from the commented out function
             //string connString = await GetSecret();
+
+            string party_name = host.party_name;
+            string party_code = host.party_code;
+            string phone_number = host.phone_number;
+            string spotify_device_id = host.spotify_device_id;
+            int invite_only = host.invite_only;
 
             // Set up connection string with server, database, user, and password
             string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
@@ -64,11 +70,15 @@ namespace Api.DemoController
 
         [HttpPost("upsert-guest")]
         // Todo: change from async to sync
-        public async Task<IActionResult> UpsertGuest([Required] string guest_name, [Required] string party_code, [Required] int at_party )
+        public async Task<IActionResult> UpsertGuest([Required][FromBody] GuestObjectModel guest)
         {
             //Eventually store in Secrets Manager when EC2 is up and running
             //then get the secret from the commented out function
             //string connString = await GetSecret();
+
+            string guest_name = guest.guest_name;
+            string party_code = guest.party_code;
+            int at_party = guest.at_party;
 
             // Set up connection string with server, database, user, and password
             string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
@@ -114,7 +124,7 @@ namespace Api.DemoController
 
             // Set up connection string with server, database, user, and password
             string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
-            
+
             // Create and open the connection to the db
             MySqlConnection conn = new MySqlConnection(connString);
             conn.Open();
@@ -207,7 +217,7 @@ namespace Api.DemoController
             
         }
 
-        // eventually move into not accepting parameters, but just a single object for upserts?
+        //this is the the format for the body of a Host endpoint
         public class HostObjectModel
         {
             public string party_name { get; set; }
@@ -217,6 +227,7 @@ namespace Api.DemoController
             public int invite_only { get; set; }
         }
 
+        //this is the the format for the body of a Guest endpoint
         public class GuestObjectModel
         {
             public string guest_name { get; set; }
