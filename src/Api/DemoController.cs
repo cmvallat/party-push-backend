@@ -11,6 +11,10 @@ using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
+using Models;
+using Mediator;
+using Core.Queries;
+
 
 namespace Api.DemoController
 {
@@ -19,10 +23,19 @@ namespace Api.DemoController
 
     public class DemoController : ControllerBase
     {
+        private IMediator _mediator;
+        
+        public DemoController(IMediator mediator)
+        {
+            _mediator = mediator;
+        }
+
+
+
         //right now the controller has logic in it - eventually move to command
         [HttpPost("upsert-host")]
         // Todo: change from async to sync
-        public async Task<IActionResult> UpsertHost([Required][FromBody] HostObjectModel host)
+        public async Task<IActionResult> UpsertHost([Required][FromBody] Models.Host host)
         {
             //Eventually store in Secrets Manager when EC2 is up and running
             //then get the secret from the commented out function
@@ -35,7 +48,8 @@ namespace Api.DemoController
             int invite_only = host.invite_only;
 
             // Set up connection string with server, database, user, and password
-            string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
+            //string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
+            string connString = "server=party-resources.crurrv9mzw4i.us-west-1.rds.amazonaws.com;port=3306;database=Party;user=cmvallat;password=Gdtbath21";
 
             // Create and open the connection to the db
             MySqlConnection conn = new MySqlConnection(connString);
@@ -70,7 +84,7 @@ namespace Api.DemoController
 
         [HttpPost("upsert-guest")]
         // Todo: change from async to sync
-        public async Task<IActionResult> UpsertGuest([Required][FromBody] GuestObjectModel guest)
+        public async Task<IActionResult> UpsertGuest([Required][FromBody] Guest guest)
         {
             //Eventually store in Secrets Manager when EC2 is up and running
             //then get the secret from the commented out function
@@ -81,7 +95,8 @@ namespace Api.DemoController
             int at_party = guest.at_party;
 
             // Set up connection string with server, database, user, and password
-            string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
+            //string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
+            string connString = "server=party-resources.crurrv9mzw4i.us-west-1.rds.amazonaws.com;port=3306;database=Party;user=cmvallat;password=Gdtbath21";
 
             // Create and open the connection to the db
             MySqlConnection conn = new MySqlConnection(connString);
@@ -123,7 +138,8 @@ namespace Api.DemoController
             //string connString = await GetSecret();
 
             // Set up connection string with server, database, user, and password
-            string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
+            //string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
+            string connString = "server=party-resources.crurrv9mzw4i.us-west-1.rds.amazonaws.com;port=3306;database=Party;user=cmvallat;password=Gdtbath21";
 
             // Create and open the connection to the db
             MySqlConnection conn = new MySqlConnection(connString);
@@ -139,7 +155,7 @@ namespace Api.DemoController
 
             // Execute the command and return the object, then close the connection
             // Todo: wrap in try block and handle errors in catch
-            HostObjectModel returnedObj = new HostObjectModel();
+            Models.Host returnedObj = new Models.Host();
 
             using (MySqlDataReader reader = cmd.ExecuteReader())
             {
@@ -175,65 +191,76 @@ namespace Api.DemoController
             //string connString = await GetSecret();
 
             // Set up connection string with server, database, user, and password
-            string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
-            
-            // Create and open the connection to the db
-            MySqlConnection conn = new MySqlConnection(connString);
-            conn.Open();
+            //string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
 
-            // Create the SQL statements you want to execute
-            // Todo: LIMIT-ing 1 right now; need to make party_code and guest_name UNIQUE in db so there is no other option
-            var guestSelectStatement = "SELECT * FROM Guest WHERE guest_name = @guest_name && party_code = @party_code LIMIT 1;";
 
-            //parameterize the statement with values from the API
-            MySqlCommand cmd = new MySqlCommand(guestSelectStatement, conn);
-            cmd.Parameters.AddWithValue("@guest_name", guest_name);
-            cmd.Parameters.AddWithValue("@party_code", party_code);
-
-            // Execute the command and return the object, then close the connection
-            // Todo: wrap in try block and handle errors in catch
-            GuestObjectModel returnedObj = new GuestObjectModel();
-
-            using (MySqlDataReader reader = cmd.ExecuteReader())
+            var guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
+            if(guest != null)
             {
-                while (reader.Read())
-                {
-                    //map response properties to returned object
-                    returnedObj.guest_name = reader.GetString("guest_name");
-                    returnedObj.party_code = reader.GetString("party_code");
-                    returnedObj.at_party = reader.GetInt32("at_party");
-                }
+                return Ok(guest);
             }
-            conn.Close();
+            return NotFound();
+
+
+
+
+            // // Create and open the connection to the db
+            // MySqlConnection conn = new MySqlConnection(connString);
+            // conn.Open();
+
+            // // Create the SQL statements you want to execute
+            // // Todo: LIMIT-ing 1 right now; need to make party_code and guest_name UNIQUE in db so there is no other option
+            // var guestSelectStatement = "SELECT * FROM Guest WHERE guest_name = @guest_name && party_code = @party_code LIMIT 1;";
+
+            // //parameterize the statement with values from the API
+            // MySqlCommand cmd = new MySqlCommand(guestSelectStatement, conn);
+            // cmd.Parameters.AddWithValue("@guest_name", guest_name);
+            // cmd.Parameters.AddWithValue("@party_code", party_code);
+
+            // // Execute the command and return the object, then close the connection
+            // // Todo: wrap in try block and handle errors in catch
+            // Guest returnedObj = new Guest();
+
+            // using (MySqlDataReader reader = cmd.ExecuteReader())
+            // {
+            //     while (reader.Read())
+            //     {
+            //         //map response properties to returned object
+            //         returnedObj.guest_name = reader.GetString("guest_name");
+            //         returnedObj.party_code = reader.GetString("party_code");
+            //         returnedObj.at_party = reader.GetInt32("at_party");
+            //     }
+            // }
+            // conn.Close();
             
-            //if something was added to the db, return success
-            if(returnedObj != null)
-            {
-                return Ok(returnedObj);
-            }
+            // //if something was added to the db, return success
+            // if(returnedObj != null)
+            // {
+            //     return Ok(returnedObj);
+            // }
             
-            //if nothing was added to the db, return error
-            return StatusCode(500, new { message = "Failed to get from db" });
+            // //if nothing was added to the db, return error
+            // return StatusCode(500, new { message = "Failed to get from db" });
             
         }
 
         //this is the the format for the body of a Host endpoint
-        public class HostObjectModel
-        {
-            public string party_name { get; set; }
-            public string party_code { get; set; }
-            public string phone_number { get; set; }
-            public string spotify_device_id { get; set; }
-            public int invite_only { get; set; }
-        }
+        // public class HostObjectModel
+        // {
+        //     public string party_name { get; set; }
+        //     public string party_code { get; set; }
+        //     public string phone_number { get; set; }
+        //     public string spotify_device_id { get; set; }
+        //     public int invite_only { get; set; }
+        // }
 
-        //this is the the format for the body of a Guest endpoint
-        public class GuestObjectModel
-        {
-            public string guest_name { get; set; }
-            public string party_code { get; set; }
-            public int at_party { get; set; }
-        }
+        // //this is the the format for the body of a Guest endpoint
+        // public class GuestObjectModel
+        // {
+        //     public string guest_name { get; set; }
+        //     public string party_code { get; set; }
+        //     public int at_party { get; set; }
+        // }
 
         // un-comment this function when EC2 is up so we can test secret - only works on EC2, not locally
         // static async Task<string> GetSecret()
