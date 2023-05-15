@@ -11,7 +11,6 @@ namespace DataLayer;
 public class PartyService : IPartyService
 {
     private readonly IDatabaseConnectionFactory _connectionFactory;
-    private readonly string _connectionString;
 
     #region Service Setup
     
@@ -53,11 +52,51 @@ public class PartyService : IPartyService
             }
             connection.Close();
 
-            //return what we got - if its correct or null, either way handle in controller
+            //de facto way to tell if our object is null
+            if(returnedObj.party_code == null || returnedObj.guest_name == null)
+            {
+                return null;
+            }
             return returnedObj;
-            
-            
-            
+        }
+    }
+
+     public async Task<Host> GetHost(string party_code)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            // Todo: LIMIT-ing 1 right now; need to make party_code UNIQUE in db so there is no other option
+            var hostSelectStatement = "SELECT * FROM Host WHERE party_code = @party_code LIMIT 1;";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(hostSelectStatement, connection);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+
+            // Execute the command and return the object, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            Models.Host returnedObj = new Models.Host();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    //map response properties to returned object
+                    returnedObj.party_name = reader.GetString("party_name");
+                    returnedObj.party_code = reader.GetString("party_code");
+                    returnedObj.phone_number = reader.GetString("phone_number");
+                    returnedObj.spotify_device_id = reader.GetString("spotify_device_id");
+                    returnedObj.invite_only = reader.GetInt32("invite_only");
+                }
+            }
+            connection.Close();
+
+            //de facto way to tell if our object is null
+            if(returnedObj.party_code == null)
+            {
+                return null;
+            }
+            return returnedObj;
         }
     }
 
