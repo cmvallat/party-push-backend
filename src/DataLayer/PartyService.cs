@@ -5,7 +5,6 @@ using MySql.Data.MySqlClient;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 
-
 namespace DataLayer;
 
 public class PartyService : IPartyService
@@ -52,7 +51,7 @@ public class PartyService : IPartyService
             }
             connection.Close();
 
-            //de facto way to tell if our object is null
+            //de facto way to tell if our object is null - if primary keys are null
             if(returnedObj.party_code == null || returnedObj.guest_name == null)
             {
                 return null;
@@ -61,7 +60,7 @@ public class PartyService : IPartyService
         }
     }
 
-     public async Task<Host> GetHost(string party_code)
+    public async Task<Host> GetHost(string party_code)
     {
         using(var connection = await _connectionFactory.GetConnection())
         {
@@ -91,12 +90,84 @@ public class PartyService : IPartyService
             }
             connection.Close();
 
-            //de facto way to tell if our object is null
+            //de facto way to tell if our object is null - if primary keys are null
             if(returnedObj.party_code == null)
             {
                 return null;
             }
             return returnedObj;
+        }
+    }
+
+    public async Task<bool> UpsertGuest(Guest guest)
+    {
+        string guest_name = guest.guest_name;
+        string party_code = guest.party_code;
+        int at_party = guest.at_party;
+
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
+            //meaning there needs to be an entry in Host with the same party_code
+            var guestUpsertStatement = "INSERT INTO Guest (guest_name, party_code, at_party) VALUES (@guest_name, @party_code, @at_party)";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(guestUpsertStatement, connection);
+            cmd.Parameters.AddWithValue("@guest_name", guest_name);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+            cmd.Parameters.AddWithValue("@at_party", at_party);
+
+            // Execute the command and get the number of rows affected, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            int rowsAffected = cmd.ExecuteNonQuery();
+            connection.Close();
+            
+            //if something was added to the db, return success
+            if(rowsAffected != 0)
+            {
+                return true;
+            }
+            
+            //if nothing was added to the db, return error
+            return false;
+        }
+    }
+
+    public async Task<bool> UpsertHost(Host host)
+    {
+        string party_name = host.party_name;
+        string party_code = host.party_code;
+        string phone_number = host.phone_number;
+        string spotify_device_id = host.spotify_device_id;
+        int invite_only = host.invite_only;
+
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            var hostUpsertStatement = "INSERT INTO Host (party_name, party_code, phone_number, spotify_device_id, invite_only) VALUES (@party_name, @party_code, @phone_number, @spotify_device_id, @invite_only)";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(hostUpsertStatement, connection);
+            cmd.Parameters.AddWithValue("@party_name", party_name);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+            cmd.Parameters.AddWithValue("@phone_number", phone_number);
+            cmd.Parameters.AddWithValue("@spotify_device_id", spotify_device_id);
+            cmd.Parameters.AddWithValue("@invite_only", invite_only);
+
+            // Execute the command and get the number of rows affected, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            int rowsAffected = cmd.ExecuteNonQuery();
+            connection.Close();
+            
+            //if something was added to the db, return success
+            if(rowsAffected != 0)
+            {
+                return true;
+            }
+            
+            //if nothing was added to the db, return error
+            return false;
         }
     }
 

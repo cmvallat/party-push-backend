@@ -1,6 +1,7 @@
 using Mediator;
 using Models;
 using DataLayer;
+using System.ComponentModel.DataAnnotations;
 
 namespace Core.Queries;
 
@@ -8,6 +9,7 @@ public class HostQuery
 {
     public class Query : IRequest<Host>
     {
+        [Required]
         public string Party_code { get; set; }
     }
 
