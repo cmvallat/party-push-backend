@@ -2,8 +2,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
 using System.Net;
+using DataLayer;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSingleton<IDatabaseConnectionFactory, PartyConnectionFactory>();
+builder.Services.AddSingleton<IPartyService, PartyService>();
+builder.Services.AddMediator();
 
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
