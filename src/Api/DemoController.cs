@@ -24,7 +24,7 @@ namespace Api.DemoController
 
     public class DemoController : ControllerBase
     {
-        private IMediator _mediator;
+        private IMediator _mediator; 
 
         public DemoController(IMediator mediator)
         {
@@ -35,8 +35,26 @@ namespace Api.DemoController
         [HttpPost("upsert-host")]
 
         // Todo: change from async to sync
+        // Todo: add more validation for upserts??
+
         public async Task<IActionResult> UpsertHost([Required][FromBody] Models.Host host)
         {
+            //validate input - make sure they passed a value for party_code, party_name and phone_number
+            if(String.IsNullOrWhiteSpace(host.party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
+            if(String.IsNullOrWhiteSpace(host.party_name))
+            {
+                return StatusCode(500, new { message = "Party Name was invalid" });
+            }
+
+            if(String.IsNullOrWhiteSpace(host.phone_number))
+            {
+                return StatusCode(500, new { message = "Phone Number was invalid" });
+            }
+
             var result = await _mediator.Send(new UpsertHost.Command { Host = host });
 
             if(result)
@@ -53,6 +71,17 @@ namespace Api.DemoController
         // Todo: change from async to sync
         public async Task<IActionResult> UpsertGuest([Required][FromBody] Guest guest)
         {
+            //validate input - make sure they passed a value for party_code and guest_name
+            if(String.IsNullOrWhiteSpace(guest.party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
+            if(String.IsNullOrWhiteSpace(guest.guest_name))
+            {
+                return StatusCode(500, new { message = "Guest Name was invalid" });
+            }
+
            var result = await _mediator.Send(new UpsertGuest.Command { Guest = guest });
 
             if(result)
@@ -69,6 +98,12 @@ namespace Api.DemoController
         // Todo: change from async to sync
         public async Task<IActionResult> GetHostByPartyCode([Required] string party_code)
         {
+            //validate input - make sure they passed a value for party_code
+            if(String.IsNullOrWhiteSpace(party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
             var host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
 
             if(host != null)
@@ -85,6 +120,17 @@ namespace Api.DemoController
         // Todo: change from async to sync
         public async Task<IActionResult> GetGuestByNameAndCode([Required] string guest_name, [Required] string party_code)
         {
+            //validate input - make sure they passed a value for party_code
+            if(String.IsNullOrWhiteSpace(guest_name))
+            {
+                return StatusCode(500, new { message = "Guest Name was invalid" });
+            }
+            
+            //validate input - make sure they passed a value for guest_name
+            if(String.IsNullOrWhiteSpace(party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
 
             var guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
 

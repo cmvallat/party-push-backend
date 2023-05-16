@@ -9,6 +9,7 @@ public class UpsertHost
 {
     public class Command : IRequest<bool>
     {
+        [Required]
         public Host Host { get; set; }
     }
 

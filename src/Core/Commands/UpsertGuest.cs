@@ -9,6 +9,7 @@ public class UpsertGuest
 {
     public class Command : IRequest<bool>
     {
+        [Required]
         public Guest Guest { get; set; }
     }
 
