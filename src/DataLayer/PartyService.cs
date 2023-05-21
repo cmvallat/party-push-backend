@@ -244,5 +244,51 @@ public class PartyService : IPartyService
         }
     }
 
+    public async Task<bool> EndParty(string party_code)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+
+            //remember!!! party_code is a foreign key, so the guest needs to be at an existing party
+            //meaning there needs to be an entry in Host with the same party_code
+
+            //make sure SQL_SAFE_UPDATES = 1 in order to be able to delete
+            //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 1;
+            var guestDeleteStatement = "DELETE FROM Guest WHERE party_code = @party_code;";
+            var hostDeleteStatement = "DELETE FROM Host WHERE party_code = @party_code";
+
+            //parameterize the statement with values from the API
+            MySqlCommand guest_cmd = new MySqlCommand(guestDeleteStatement, connection);
+            MySqlCommand host_cmd = new MySqlCommand(hostDeleteStatement, connection);
+            guest_cmd.Parameters.AddWithValue("@party_code", party_code);
+            host_cmd.Parameters.AddWithValue("@party_code", party_code);
+
+            // Execute the command and get the number of rows affected, then close the connection
+            try{
+                int guestRowsAffected = guest_cmd.ExecuteNonQuery();
+            }
+            catch{
+                throw new Exception("Something went wrong with deleting the guests at this party");
+            }
+            //have to delete all the guests before the host
+            //otherwise, the foreign key party_code used in Guest 
+            //will create an error
+            int hostRowsAffected = host_cmd.ExecuteNonQuery();
+
+            connection.Close();
+            
+            //if the party/host was deleted, return success
+            //if the host was deleted, we know the guests were deleted
+            if(hostRowsAffected != 0)
+            {
+                return true;
+            }
+            
+            //if the party wasn't deleted from the db, return error
+            return false;
+        }
+    }
+
     #endregion
 }

@@ -10,4 +10,5 @@ public interface IPartyService
     Task<Host> GetHost(string party_code);
     Task<bool> DeleteGuest(Guest guest);
     Task<List<Guest>> GetGuestList(string party_code);
+    Task<bool> EndParty(string party_code);
 }
