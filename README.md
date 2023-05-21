@@ -2,7 +2,7 @@
 
 Party Push is a web app (will be hosted in the future at https://www.livepartytracker.com) in development that crowdsources party and event management.
 
-This backend is a .NET6 backend (C# code) that utilizes a CQRS pattern. It writes to an AWS RDS instance.
+This backend uses the .NET6 framework (C# code) and the CQRS pattern. It writes to an AWS RDS instance.
 
 See "party-push" repo for the corresponding frontend of the app.
 
