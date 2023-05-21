@@ -171,5 +171,41 @@ public class PartyService : IPartyService
         }
     }
 
+    public async Task<bool> DeleteGuest(Guest guest)
+    {
+        string guest_name = guest.guest_name;
+        string party_code = guest.party_code;
+
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            //remember!!! party_code is a foreign key, so the guest needs to be at an existing party
+            //meaning there needs to be an entry in Host with the same party_code
+
+            //make sure SQL_SAFE_UPDATES = 1 in order to be able to delete
+            //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 1;
+            var guestDeleteStatement = "DELETE FROM Guest WHERE guest_name = @guest_name AND party_code = @party_code";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(guestDeleteStatement, connection);
+            cmd.Parameters.AddWithValue("@guest_name", guest_name);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+
+            // Execute the command and get the number of rows affected, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            int rowsAffected = cmd.ExecuteNonQuery();
+            connection.Close();
+            
+            //if something was deleted from the db, return success
+            if(rowsAffected != 0)
+            {
+                return true;
+            }
+            
+            //if nothing was deleted from the db, return error
+            return false;
+        }
+    }
+
     #endregion
 }

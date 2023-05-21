@@ -142,6 +142,33 @@ namespace Api.DemoController
             return StatusCode(500, new { message = "Failed to get Guest from db" });
         }
 
+         //Delete Guest endpoint
+        [HttpPost("delete-guest")]
+
+        // Todo: change from async to sync
+        public async Task<IActionResult> DeleteGuestByNameAndCode([Required][FromBody] Guest guest)
+        {
+            //validate input - make sure they passed a value for party_code and guest_name
+            if(String.IsNullOrWhiteSpace(guest.party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
+            if(String.IsNullOrWhiteSpace(guest.guest_name))
+            {
+                return StatusCode(500, new { message = "Guest Name was invalid" });
+            }
+
+            var result = await _mediator.Send(new DeleteGuest.Command() {Guest = guest});
+
+            if(result)
+            {
+                return Ok(result);
+            }
+
+            return StatusCode(500, new { message = "Failed to delete Guest from db" });
+        }
+
         // un-comment this function when EC2 is up so we can test secret - only works on EC2, not locally
         // static async Task<string> GetSecret()
         // {
