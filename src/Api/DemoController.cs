@@ -169,6 +169,28 @@ namespace Api.DemoController
             return StatusCode(500, new { message = "Failed to delete Guest from db" });
         }
 
+         //Get Current Guests endpoint
+        [HttpGet("get-current-guest-list")]
+
+        // Todo: change from async to sync
+        public async Task<IActionResult> GetCurrentGuestsByCode([Required] string party_code)
+        {   
+            //validate input - make sure they passed a value for guest_name
+            if(String.IsNullOrWhiteSpace(party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
+            List<Guest> guest_list = await _mediator.Send(new CurrentGuestsQuery.Query() {Party_code = party_code});
+            
+            if(guest_list != null)
+            {
+                return Ok(guest_list);
+            }
+
+            return StatusCode(500, new { message = "Failed to get Guest list from db" });
+        }
+
         // un-comment this function when EC2 is up so we can test secret - only works on EC2, not locally
         // static async Task<string> GetSecret()
         // {
