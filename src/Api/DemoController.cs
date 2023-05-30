@@ -142,6 +142,77 @@ namespace Api.DemoController
             return StatusCode(500, new { message = "Failed to get Guest from db" });
         }
 
+         //Delete Guest endpoint
+        [HttpPost("delete-guest")]
+
+        // Todo: change from async to sync
+        public async Task<IActionResult> DeleteGuestByNameAndCode([Required][FromBody] Guest guest)
+        {
+            //validate input - make sure they passed a value for party_code and guest_name
+            if(String.IsNullOrWhiteSpace(guest.party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
+            if(String.IsNullOrWhiteSpace(guest.guest_name))
+            {
+                return StatusCode(500, new { message = "Guest Name was invalid" });
+            }
+
+            var result = await _mediator.Send(new DeleteGuest.Command() {Guest = guest});
+
+            if(result)
+            {
+                return Ok(result);
+            }
+
+            return StatusCode(500, new { message = "Failed to delete Guest from db" });
+        }
+
+         //Get Current Guests endpoint
+        [HttpGet("get-current-guest-list")]
+
+        // Todo: change from async to sync
+        public async Task<IActionResult> GetCurrentGuestsByCode([Required] string party_code)
+        {   
+            //validate input - make sure they passed a value for guest_name
+            if(String.IsNullOrWhiteSpace(party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
+            List<Guest> guest_list = await _mediator.Send(new CurrentGuestsQuery.Query() {Party_code = party_code});
+            
+            if(guest_list != null)
+            {
+                return Ok(guest_list);
+            }
+
+            return StatusCode(500, new { message = "Failed to get Guest list from db" });
+        }
+
+        //End party (delete all guests and host) endpoint
+        [HttpPost("end-party")]
+
+        // Todo: change from async to sync
+        public async Task<IActionResult> EndParty([Required] string party_code)
+        {
+            //validate input - make sure they passed a value for party_code and guest_name
+            if(String.IsNullOrWhiteSpace(party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
+           var result = await _mediator.Send(new EndParty.Command { Party_code = party_code });
+
+            if(result)
+            {
+                return Ok(result);
+            }
+
+            return StatusCode(500, new { message = "Failed to get delete party from db" });
+        }
+
         // un-comment this function when EC2 is up so we can test secret - only works on EC2, not locally
         // static async Task<string> GetSecret()
         // {
