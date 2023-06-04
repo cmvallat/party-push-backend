@@ -4,6 +4,4 @@ Party Push is a web app (will be hosted in the future at https://www.livepartytr
 
 This backend uses the .NET6 framework (C# code) and the CQRS pattern. It writes to an AWS RDS instance.
 
-See "party-push" repo for the corresponding frontend of the app.
-
 Target v1 release date: October 2nd, 2023.
