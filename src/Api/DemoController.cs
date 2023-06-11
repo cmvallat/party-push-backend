@@ -15,6 +15,8 @@ using Models;
 using Mediator;
 using Core.Queries;
 using Core.Commands;
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
 
 
 namespace Api.DemoController
@@ -30,6 +32,37 @@ namespace Api.DemoController
         {
             _mediator = mediator;
         }
+
+         //Send SMS endpoint
+        [HttpPost("send-sms-test")]
+
+        // Todo: move logic to certain endpoints, not its own
+        public async Task<IActionResult> SendSMS([Required] string phoneNum)
+        {
+            //validate input - make sure they passed a value for phoneNum
+            if(String.IsNullOrWhiteSpace(phoneNum))
+            {
+                return StatusCode(500, new { message = "Phone Number was invalid" });
+            }
+
+            //Todo: store these in secrets manager or environment variables
+            string accountSid = "AC204481289afbc1ff5711342416e181fb";
+            string authToken = "054ec81dd2e884d347d72067654d98cd";
+
+            TwilioClient.Init(accountSid, authToken);
+
+            var messageOptions = new CreateMessageOptions(
+                 new Twilio.Types.PhoneNumber(phoneNum));
+                messageOptions.From = new Twilio.Types.PhoneNumber("+18449453925");
+                messageOptions.Body = "your party was created!";
+
+            var text_message = MessageResource.Create(messageOptions);
+
+            //Todo: don't hardcode 200 status code, return success or failure
+            return StatusCode(200, new { message = "Success", text_message });
+        }
+
+
 
         //Upsert Host endpoint
         [HttpPost("upsert-host")]
