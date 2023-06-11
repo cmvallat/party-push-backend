@@ -31,13 +31,13 @@ namespace Api.DemoController
             _mediator = mediator;
         }
 
-        //Upsert Host endpoint
-        [HttpPost("upsert-host")]
+        //Create Party (Host object) endpoint
+        [HttpPost("create-party")]
 
         // Todo: change from async to sync
         // Todo: add more validation for upserts??
 
-        public async Task<IActionResult> UpsertHost([Required][FromBody] Models.Host host)
+        public async Task<IActionResult> CreateParty([Required][FromBody] Models.Host host)
         {
             //validate input - make sure they passed a value for party_code, party_name and phone_number
             if(String.IsNullOrWhiteSpace(host.party_code))
@@ -55,7 +55,7 @@ namespace Api.DemoController
                 return StatusCode(500, new { message = "Phone Number was invalid" });
             }
 
-            var result = await _mediator.Send(new UpsertHost.Command { Host = host });
+            var result = await _mediator.Send(new CreateParty.Command { Host = host });
 
             if(result)
             {
@@ -65,11 +65,11 @@ namespace Api.DemoController
             return StatusCode(500, new { message = "Failed to get upsert Host from db" });
         }
 
-        //Upsert Guest endpoint
-        [HttpPost("upsert-guest")]
+        //Add Guest from Host endpoint
+        [HttpPost("add-guest-from-host")]
 
         // Todo: change from async to sync
-        public async Task<IActionResult> UpsertGuest([Required][FromBody] Guest guest)
+        public async Task<IActionResult> AddGuestFromHost([Required][FromBody] Guest guest)
         {
             //validate input - make sure they passed a value for party_code and guest_name
             if(String.IsNullOrWhiteSpace(guest.party_code))
@@ -81,15 +81,87 @@ namespace Api.DemoController
             {
                 return StatusCode(500, new { message = "Guest Name was invalid" });
             }
-
-           var result = await _mediator.Send(new UpsertGuest.Command { Guest = guest });
+            guest.at_party = 0;
+            var result = await _mediator.Send(new AddGuestFromHost.Command { Guest = guest });
 
             if(result)
             {
                 return Ok(result);
             }
 
-            return StatusCode(500, new { message = "Failed to get upsert Guest from db" });
+            return StatusCode(500, new { message = "Something went wrong." });
+        }
+
+         //Add Guest check-in endpoint
+        [HttpPost("guest-check-in")]
+
+        // Todo: change from async to sync
+        public async Task<IActionResult> CheckInGuest([Required][FromBody] Guest guest)
+        {
+            bool result = false;
+            //validate input - make sure they passed a value for party_code and guest_name
+            if(String.IsNullOrWhiteSpace(guest.party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+
+            if(String.IsNullOrWhiteSpace(guest.guest_name))
+            {
+                return StatusCode(500, new { message = "Guest Name was invalid" });
+            }
+
+           Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query { Party_code = guest.party_code });
+           if(corresponding_host == null)
+           {
+                throw new Exception("Couldn't find a party with this party code.");
+           }
+           //if party is open to the public, just go ahead and add guest
+           if(corresponding_host.invite_only == 0)
+           {
+                //todo: split out into new command (add guest from host or open invite vs guest check in)
+                //they will have different error messages
+                Guest matching_guest = new Guest
+                {
+                    guest_name = guest.guest_name,
+                    party_code = guest.party_code,
+                    at_party = 1
+                };
+                result = await _mediator.Send(new AddGuestFromCheckIn.Command { Guest = matching_guest});
+           }
+           else //otherwise, it is invite only and we have to check if they are invited
+           {
+                //query to check if they are invited
+                var invited_guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest.guest_name, Party_code = guest.party_code});
+                if(invited_guest != null) //then they are invited
+                {
+                    if(invited_guest.at_party == 0) //if they aren't currently at the party, let them in
+                    {
+                        Guest new_guest_details = new Guest
+                        {
+                            guest_name = invited_guest.guest_name,
+                            party_code = invited_guest.party_code,
+                            at_party = 1
+                        };
+                        //Todo: add new command to updateGuest
+                        result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
+                    }
+                    else //they are somehow at the party already, throw error
+                    {
+                        throw new Exception("There is already someone at this party with this name. Please try checking in again with a new name.");
+                    }
+                }
+                else //they are not invited
+                {
+                    throw new Exception("Oops, this is awkward! Doesn't seem like you're on the invite list. Please check that you spelled your name and the party code right, or try joining another party.");
+                }
+           }
+
+            if(result)
+            {
+                return Ok(result);
+            }
+
+            return StatusCode(500, new { message = "Something went wrong." });
         }
 
         //Get Host endpoint

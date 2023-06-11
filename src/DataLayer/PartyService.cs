@@ -4,18 +4,21 @@ using System.Data;
 using MySql.Data.MySqlClient;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+//using Mediator;
 
 namespace DataLayer;
 
 public class PartyService : IPartyService
 {
     private readonly IDatabaseConnectionFactory _connectionFactory;
+    //private IMediator _mediator; 
 
     #region Service Setup
     
     public PartyService(IDatabaseConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
+        //_mediator = mediator;
     }
 
     #endregion
@@ -65,8 +68,8 @@ public class PartyService : IPartyService
         using(var connection = await _connectionFactory.GetConnection())
         {
             // Create the SQL statements you want to execute
-            // Todo: LIMIT-ing 1 right now; need to make party_code UNIQUE in db so there is no other option
-            var hostSelectStatement = "SELECT * FROM Host WHERE party_code = @party_code LIMIT 1;";
+            // party_code is a primary key and thus unique constraint in db
+            var hostSelectStatement = "SELECT * FROM Host WHERE party_code = @party_code";
 
             //parameterize the statement with values from the API
             MySqlCommand cmd = new MySqlCommand(hostSelectStatement, connection);
@@ -99,7 +102,7 @@ public class PartyService : IPartyService
         }
     }
 
-    public async Task<bool> UpsertGuest(Guest guest)
+    public async Task<bool> AddGuestFromHost(Guest guest)
     {
         string guest_name = guest.guest_name;
         string party_code = guest.party_code;
@@ -107,34 +110,158 @@ public class PartyService : IPartyService
 
         using(var connection = await _connectionFactory.GetConnection())
         {
-            // Create the SQL statements you want to execute
-            //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
-            //meaning there needs to be an entry in Host with the same party_code
-            var guestUpsertStatement = "INSERT INTO Guest (guest_name, party_code, at_party) VALUES (@guest_name, @party_code, @at_party)";
-
-            //parameterize the statement with values from the API
-            MySqlCommand cmd = new MySqlCommand(guestUpsertStatement, connection);
-            cmd.Parameters.AddWithValue("@guest_name", guest_name);
-            cmd.Parameters.AddWithValue("@party_code", party_code);
-            cmd.Parameters.AddWithValue("@at_party", at_party);
-
-            // Execute the command and get the number of rows affected, then close the connection
-            // Todo: wrap in try block and handle errors in catch
-            int rowsAffected = cmd.ExecuteNonQuery();
-            connection.Close();
-            
-            //if something was added to the db, return success
-            if(rowsAffected != 0)
+            try
             {
-                return true;
+                // Create the SQL statements you want to execute
+                //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
+                //meaning there needs to be an entry in Host with the same party_code
+                var guestInsertStatement = "INSERT INTO Guest (guest_name, party_code, at_party) VALUES (@guest_name, @party_code, @at_party)";
+
+                //parameterize the statement with values from the API
+                MySqlCommand cmd = new MySqlCommand(guestInsertStatement, connection);
+                cmd.Parameters.AddWithValue("@guest_name", guest_name);
+                cmd.Parameters.AddWithValue("@party_code", party_code);
+                cmd.Parameters.AddWithValue("@at_party", at_party);
+
+                // Execute the command and get the number of rows affected, then close the connection
+                // Todo: wrap in try block and handle errors in catch
+                int rowsAffected = cmd.ExecuteNonQuery();
+                connection.Close();
+                
+                //if something was added to the db, return success
+                if(rowsAffected != 0)
+                {
+                    return true;
+                }
+                
+                //if nothing was added to the db, return error
+                return false;
             }
-            
-            //if nothing was added to the db, return error
-            return false;
+            catch (MySqlException ex)
+            {
+                // Duplicate entry on unique constraint of guest_name and party_code
+                if (ex.Number == 1062)
+                {
+                    // var duplicated_guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
+                    // if(duplicated_guest.at_party = 1) //if at party
+                    // {
+                    //     throw new Exception("You already have a guest currently at your party with this name. Please check your current guest list or add a new guest."); 
+                    // }
+                    // else //it was 0, not at party
+                    // {
+                    //     throw new Exception("You already have an invited guest with this name. Please check your invited guest list or add a new guest."); 
+                    // }
+                    throw new Exception("You already have a guest invited to or currently at your party with this name. Please check your current and invited guest list or add a new guest."); 
+                }
+
+                // Handle other SQL errors if needed
+                throw new Exception("Failed to add guest to the database with this party code."); // rethrow the exception for unhandled errors
+            }
         }
     }
 
-    public async Task<bool> UpsertHost(Host host)
+    public async Task<bool> AddGuestFromCheckIn(Guest guest)
+    {
+        string guest_name = guest.guest_name;
+        string party_code = guest.party_code;
+        int at_party = guest.at_party;
+
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            try
+            {
+                // Create the SQL statements you want to execute
+                //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
+                //meaning there needs to be an entry in Host with the same party_code
+                var guestInsertStatement = "INSERT INTO Guest (guest_name, party_code, at_party) VALUES (@guest_name, @party_code, @at_party)";
+
+                //parameterize the statement with values from the API
+                MySqlCommand cmd = new MySqlCommand(guestInsertStatement, connection);
+                cmd.Parameters.AddWithValue("@guest_name", guest_name);
+                cmd.Parameters.AddWithValue("@party_code", party_code);
+                cmd.Parameters.AddWithValue("@at_party", at_party);
+
+                // Execute the command and get the number of rows affected, then close the connection
+                // Todo: wrap in try block and handle errors in catch
+                int rowsAffected = cmd.ExecuteNonQuery();
+                connection.Close();
+                
+                //if something was added to the db, return success
+                if(rowsAffected != 0)
+                {
+                    return true;
+                }
+                
+                //if nothing was added to the db, return error
+                return false;
+            }
+            catch (MySqlException ex)
+            {
+                // Duplicate entry on unique constraint of guest_name and party_code
+                if (ex.Number == 1062)
+                {
+                    // var duplicated_guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
+                    // if(duplicated_guest.at_party = 1) //if at party
+                    // {
+                    //     throw new Exception("You already have a guest currently at your party with this name. Please check your current guest list or add a new guest."); 
+                    // }
+                    // else //it was 0, not at party
+                    // {
+                    //     throw new Exception("You already have an invited guest with this name. Please check your invited guest list or add a new guest."); 
+                    // }
+                    throw new Exception("Someone with the same name is already invited to or joined this party. Please check that you spelled your name and the party code right, or try joining another party."); 
+                }
+
+                // Handle other SQL errors if needed
+                throw new Exception("Something went wrong. We don't know."); // rethrow the exception for unhandled errors
+            }
+        }
+    }
+
+    public async Task<bool> UpdateGuest(Guest guest)
+    {
+        string guest_name = guest.guest_name;
+        string party_code = guest.party_code;
+        int at_party = guest.at_party;
+
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            try
+            {
+                // Create the SQL statements you want to execute
+                //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
+                //meaning there needs to be an entry in Host with the same party_code
+                var guestUpdateStatement = "UPDATE Guest SET at_party = 0 WHERE guest_name = @guest_name AND party_code = @party_code";
+
+                //parameterize the statement with values from the API
+                MySqlCommand cmd = new MySqlCommand(guestUpdateStatement, connection);
+                cmd.Parameters.AddWithValue("@guest_name", guest_name);
+                cmd.Parameters.AddWithValue("@party_code", party_code);
+                cmd.Parameters.AddWithValue("@at_party", at_party);
+
+                // Execute the command and get the number of rows affected, then close the connection
+                // Todo: wrap in try block and handle errors in catch
+                int rowsAffected = cmd.ExecuteNonQuery();
+                connection.Close();
+                
+                //if something was updated in the db, return success
+                if(rowsAffected != 0)
+                {
+                    return true;
+                }
+                
+                //if nothing was updated in the db, return error
+                return false;
+            }
+            catch (MySqlException ex)
+            {
+                // throw general exception
+                throw new Exception("Something went wrong with updating the guest at_party to 1.");
+            }
+        }
+    }
+
+    public async Task<bool> CreateParty(Host host)
     {
         string party_name = host.party_name;
         string party_code = host.party_code;

@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Commands;
 
-public class UpsertGuest
+public class UpdateGuest
 {
     public class Command : IRequest<bool>
     {
@@ -24,7 +24,7 @@ public class UpsertGuest
 
         public async ValueTask<bool> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.UpsertGuest(request.Guest);
+            return await _dbService.UpdateGuest(request.Guest);
         }
     }
 }
