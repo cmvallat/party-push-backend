@@ -4,7 +4,7 @@ namespace DataLayer;
 
 public interface IPartyService
 {
-    Task<bool> AddGuestFromHost(Guest guest);
+    Task<bool> AddGuestFromHost(string guest_name, string party_code);
     Task<bool> AddGuestFromCheckIn(Guest guest);
     Task<bool> UpdateGuest(Guest guest);
     Task<bool> CreateParty(Host host);
