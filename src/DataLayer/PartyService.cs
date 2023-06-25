@@ -180,7 +180,6 @@ public class PartyService : IPartyService
                 cmd.Parameters.AddWithValue("@at_party", at_party);
 
                 // Execute the command and get the number of rows affected, then close the connection
-                // Todo: wrap in try block and handle errors in catch
                 int rowsAffected = cmd.ExecuteNonQuery();
                 connection.Close();
                 

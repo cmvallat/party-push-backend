@@ -37,7 +37,7 @@ namespace Api.DemoController
         [HttpPost("send-sms-test")]
 
         // Todo: move logic to certain endpoints, not its own
-        public async Task<IActionResult> SendSMS([Required] string phoneNum)
+        public async Task<IActionResult> SendSMS([Required] string phoneNum, [Required] string messageBody)
         {
             //validate input - make sure they passed a value for phoneNum
             if(String.IsNullOrWhiteSpace(phoneNum))
@@ -54,7 +54,7 @@ namespace Api.DemoController
             var messageOptions = new CreateMessageOptions(
                  new Twilio.Types.PhoneNumber(phoneNum));
                 messageOptions.From = new Twilio.Types.PhoneNumber("+18449453925");
-                messageOptions.Body = "your party was created!";
+                messageOptions.Body = messageBody;
 
             var text_message = MessageResource.Create(messageOptions);
 
@@ -92,6 +92,8 @@ namespace Api.DemoController
 
             if(result)
             {
+                string message = "Your party, " + host.party_name + ", was successfully created!";
+                await SendSMS(host.phone_number, message);
                 return Ok(result);
             }
 
@@ -164,16 +166,25 @@ namespace Api.DemoController
            {
                 throw new Exception("Couldn't find a party with this party code.");
            }
-           //if party is open to the public, just go ahead and add guest
+           //if party is open to the public, just go ahead and add guest (if they aren't already at party)
            if(corresponding_host.invite_only == 0)
            {
-                Guest matching_guest = new Guest
+                var invited_guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
+                if(invited_guest.at_party == 1)
                 {
-                    guest_name = guest_name,
-                    party_code = party_code,
-                    at_party = 1
-                };
-                result = await _mediator.Send(new AddGuestFromCheckIn.Command { Guest = matching_guest});
+                    throw new Exception("There is already someone at this party with this name. Please try checking in again with a new name.");
+                }
+                else if(invited_guest.at_party == 0 || invited_guest == null) //if not currently at party
+                {
+                    Guest matching_guest = new Guest
+                    {
+                        guest_name = guest_name,
+                        party_code = party_code,
+                        at_party = 1
+                    };
+                    result = await _mediator.Send(new AddGuestFromCheckIn.Command { Guest = matching_guest});
+                }
+                
            }
            else if (corresponding_host.invite_only == 1)//otherwise, it is invite only and we have to check if they are invited
            {
