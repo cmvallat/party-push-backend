@@ -4,8 +4,6 @@ using MySql.Data.MySqlClient;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 
-
-
 namespace DataLayer
 {
     public interface IDatabaseConnectionFactory
