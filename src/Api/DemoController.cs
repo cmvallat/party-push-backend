@@ -18,7 +18,6 @@ using Core.Commands;
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 
-
 namespace Api.DemoController
 {
     [ApiController]
@@ -69,31 +68,41 @@ namespace Api.DemoController
 
         // Todo: change from async to sync
         // Todo: add more validation for upserts??
+        // Todo: potentially remove spotify_device_id if not needed or make non-required 
 
-        public async Task<IActionResult> CreateParty([Required][FromBody] Models.Host host)
+        public async Task<IActionResult> CreateParty([Required] string Party_name,[Required] string Party_code,[Required] string Phone_number, [Required] string Spotify_device_id,[Required] int Invite_only)
         {
             //validate input - make sure they passed a value for party_code, party_name and phone_number
-            if(String.IsNullOrWhiteSpace(host.party_code))
+            if(String.IsNullOrWhiteSpace(Party_code))
             {
                 return StatusCode(500, new { message = "Party Code was invalid" });
             }
 
-            if(String.IsNullOrWhiteSpace(host.party_name))
+            if(String.IsNullOrWhiteSpace(Party_name))
             {
                 return StatusCode(500, new { message = "Party Name was invalid" });
             }
 
-            if(String.IsNullOrWhiteSpace(host.phone_number))
+            if(String.IsNullOrWhiteSpace(Phone_number))
             {
                 return StatusCode(500, new { message = "Phone Number was invalid" });
             }
+
+            Models.Host host = new Models.Host
+            {
+                party_name = Party_name,
+                party_code = Party_code,
+                phone_number = Phone_number,
+                spotify_device_id = Spotify_device_id,
+                invite_only = Invite_only
+            };
 
             var result = await _mediator.Send(new CreateParty.Command { Host = host });
 
             if(result)
             {
-                string message = "Your party, " + host.party_name + ", was successfully created!";
-                await SendSMS(host.phone_number, message);
+                string message = "Your party, " + Party_name + ", was successfully created!";
+                await SendSMS(Phone_number, message);
                 return Ok(result);
             }
 
@@ -280,18 +289,25 @@ namespace Api.DemoController
         [HttpPost("delete-guest")]
 
         // Todo: change from async to sync
-        public async Task<IActionResult> DeleteGuestByNameAndCode([Required][FromBody] Guest guest)
+        public async Task<IActionResult> DeleteGuestByNameAndCode([Required] string Guest_name, [Required] string Party_code, [Required] int At_party)
         {
             //validate input - make sure they passed a value for party_code and guest_name
-            if(String.IsNullOrWhiteSpace(guest.party_code))
+            if(String.IsNullOrWhiteSpace(Party_code))
             {
                 return StatusCode(500, new { message = "Party Code was invalid" });
             }
 
-            if(String.IsNullOrWhiteSpace(guest.guest_name))
+            if(String.IsNullOrWhiteSpace(Guest_name))
             {
                 return StatusCode(500, new { message = "Guest Name was invalid" });
             }
+
+            Guest guest = new Guest
+            {
+                guest_name = Guest_name,
+                party_code = Party_code,
+                at_party = At_party
+            };
 
             var result = await _mediator.Send(new DeleteGuest.Command() {Guest = guest});
 
