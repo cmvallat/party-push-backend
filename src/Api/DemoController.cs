@@ -77,13 +77,13 @@ namespace Api.DemoController
                 invite_only = Invite_only
             };
 
-            var result = await _mediator.Send(new CreateParty.Command { Host = host });
+            string result = await _mediator.Send(new CreateParty.Command { Host = host });
 
-            if(result)
+            if(result == "Success!")
             {
                 string message = "Your party, " + Party_name + ", was successfully created!";
                 var returnedString = Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(Phone_number, message);
-                return Ok(result);
+                return Ok();
             }
 
             return StatusCode(500, new { message = "Failed to get upsert Host to db" });
@@ -95,7 +95,7 @@ namespace Api.DemoController
         // Todo: change from async to sync
         public async Task<IActionResult> AddGuestFromHost([Required] int host_invite_only, [Required] string guest_name, [Required] string party_code)
         {
-            var result = false;
+            string result = "Success!";
             //validate input - make sure they passed a value for party_code and guest_name
             if(String.IsNullOrWhiteSpace(party_code))
             {
@@ -111,7 +111,7 @@ namespace Api.DemoController
 
             //if open to the public, no need to add a guest to an invite list
             //perhaps handle on front end?
-            if(host_invite_only == 0) 
+            if(host_invite_only == 0)
             {
                 return StatusCode(200, new {message = "Your party is open invite, no need to add guests! Just give them your party_code and tell them to check-in"});
             }
@@ -121,15 +121,15 @@ namespace Api.DemoController
             }
             else //hopefully unreachable code, this would mean something is wrong on the front end
             {
-                throw new Exception("Something went wrong with the invite_only parameter not being either 0 or 1.");
+                return StatusCode(500, new { message = "Something went wrong with the invite_only parameter not being either 0 or 1." });
             }
 
-            if(result)
+            if(result == "Success!")
             {
                 return Ok(result);
             }
 
-            return StatusCode(500, new { message = "Something went wrong adding guest from host." });
+            return StatusCode(500, new { message = result });
         }
 
          //Add Guest check-in endpoint
@@ -138,7 +138,7 @@ namespace Api.DemoController
         // Todo: change from async to sync
         public async Task<IActionResult> CheckInGuest([Required] string party_code, [Required] string guest_name)
         {
-            bool result = false;
+            string result = "Success!";
             //validate input - make sure they passed a value for party_code and guest_name
             if(String.IsNullOrWhiteSpace(party_code))
             {
@@ -153,7 +153,7 @@ namespace Api.DemoController
            Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query { Party_code = party_code });
            if(corresponding_host == null)
            {
-                throw new Exception("Couldn't find a party with this party code.");
+                return StatusCode(500, new { message = "Couldn't find a party with this party code." });
            }
            //if party is open to the public, just go ahead and add guest (if they aren't already at party)
            if(corresponding_host.invite_only == 0)
@@ -161,7 +161,7 @@ namespace Api.DemoController
                 var invited_guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
                 if(invited_guest.at_party == 1)
                 {
-                    throw new Exception("There is already someone at this party with this name. Please try checking in again with a new name.");
+                    return StatusCode(500, new { message = "There is already someone at this party with this name. Please try checking in again with a new name." });
                 }
                 else if(invited_guest.at_party == 0 || invited_guest == null) //if not currently at party
                 {
@@ -194,22 +194,22 @@ namespace Api.DemoController
                     }
                     else //they are somehow at the party already, throw error
                     {
-                        throw new Exception("There is already someone at this party with this name. Please try checking in again with a new name.");
+                        return StatusCode(500, new { message = "There is already someone at this party with this name. Please try checking in again with a new name." });
                     }
                 }
                 else //they are not invited
                 {
-                    throw new Exception("Oops, this is awkward! Doesn't seem like you're on the invite list. Please check that you spelled your name and the party code right, or try joining another party.");
+                    return StatusCode(500, new { message = "Oops, this is awkward! Doesn't seem like you're on the invite list. Please check that you spelled your name and the party code right, or try joining another party." });
                 }
            }
            else //hopefully unreachable code because this would mean something wrong with FE or invite_only (DB error)
            {
-            throw new Exception("Something went wrong with guest check in, invite_only being neither 0 or 1.");
+            return StatusCode(500, new { message = "Something went wrong with guest check in, invite_only being neither 0 or 1." });
            }
 
-            if(result)
+            if(result == "Success!")
             {
-                return Ok(result);
+                return Ok();
             }
 
             return StatusCode(500, new { message = "Something went wrong." });
@@ -291,9 +291,9 @@ namespace Api.DemoController
 
             var result = await _mediator.Send(new DeleteGuest.Command() {Guest = guest});
 
-            if(result)
+            if(result == "Success!")
             {
-                return Ok(result);
+                return Ok();
             }
 
             return StatusCode(500, new { message = "Failed to delete Guest from db" });
@@ -321,7 +321,7 @@ namespace Api.DemoController
             else if(guest_list == null) //if it is empty, throw exception
             {
                 //Todo: eventually move to handle on FE instead of exception!!!
-                throw new Exception("There are currently no guests at your party");
+                return StatusCode(200, new { message = "There are currently no guests at your party" });
             }
             //hopefully this is unreachable
             return StatusCode(500, new { message = "Something went wrong, failed to get Guest list from db" });
@@ -342,9 +342,9 @@ namespace Api.DemoController
 
            var result = await _mediator.Send(new EndParty.Command { Party_code = party_code });
 
-            if(result)
+            if(result == "Success!")
             {
-                return Ok(result);
+                return Ok();
             }
 
             return StatusCode(500, new { message = "Failed to get delete party from db" });
@@ -373,51 +373,12 @@ namespace Api.DemoController
             };
             var result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
 
-            if(result)
+            if(result == "Success!")
             {
                 return Ok(result);
             }
 
             return StatusCode(500, new { message = "Failed to remove guest from party in db" });
         }
-
-        // un-comment this function when EC2 is up so we can test secret - only works on EC2, not locally
-        // static async Task<string> GetSecret()
-        // {
-        //     string secretName = "rds-party-db-secret";
-        //     string region = "us-west-1";
-
-        //     //can only get it without specifying values when running on EC2 instance, not locally
-        //     //IAmazonSecretsManager client = new AmazonSecretsManagerClient(RegionEndpoint.GetBySystemName(region));
-
-        //     GetSecretValueRequest request = new GetSecretValueRequest
-        //     {
-        //         SecretId = secretName,
-        //         VersionStage = "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified.
-        //     };
-
-        //     GetSecretValueResponse response;
-
-        //     try
-        //     {
-        //         response = await client.GetSecretValueAsync(request);
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         // For a list of the exceptions thrown, see
-        //         // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-        //         throw e;
-        //     }
-        //
-        //     for formatting the secret into correct db connecion string format:
-        //     string secretString = response.SecretString;
-        //     // JObject secretObject = JObject.Parse(secretString);
-        //     // string username = (string)secretObject["username"];
-        //     // string host = (string)secretObject["host"];
-        //     // int port = (int)secretObject["port"];
-
-        //     return response.SecretString;
-        // }
-        
     }
 }

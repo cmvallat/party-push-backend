@@ -28,4 +28,42 @@ namespace DataLayer
             return conn;
         }
     }
+    //Todo: use this code when adding Secrets Manager functionality
+    // un-comment this function when EC2 is up so we can test secret - only works on EC2, not locally
+        // static async Task<string> GetSecret()
+        // {
+        //     string secretName = "rds-party-db-secret";
+        //     string region = "us-west-1";
+
+        //     //can only get it without specifying values when running on EC2 instance, not locally
+        //     //IAmazonSecretsManager client = new AmazonSecretsManagerClient(RegionEndpoint.GetBySystemName(region));
+
+        //     GetSecretValueRequest request = new GetSecretValueRequest
+        //     {
+        //         SecretId = secretName,
+        //         VersionStage = "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified.
+        //     };
+
+        //     GetSecretValueResponse response;
+
+        //     try
+        //     {
+        //         response = await client.GetSecretValueAsync(request);
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         // For a list of the exceptions thrown, see
+        //         // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+        //         throw e;
+        //     }
+        //
+        //     for formatting the secret into correct db connecion string format:
+        //     string secretString = response.SecretString;
+        //     // JObject secretObject = JObject.Parse(secretString);
+        //     // string username = (string)secretObject["username"];
+        //     // string host = (string)secretObject["host"];
+        //     // int port = (int)secretObject["port"];
+
+        //     return response.SecretString;
+        // }
 }

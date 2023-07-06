@@ -7,13 +7,13 @@ namespace Core.Commands;
 
 public class UpdateGuest
 {
-    public class Command : IRequest<bool>
+    public class Command : IRequest<string>
     {
         [Required]
         public Guest Guest { get; set; }
     }
 
-    public class Handler : IRequestHandler<Command, bool>
+    public class Handler : IRequestHandler<Command, string>
     {
         private readonly IPartyService _dbService;
 
@@ -22,7 +22,7 @@ public class UpdateGuest
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
         }
 
-        public async ValueTask<bool> Handle(Command request, CancellationToken cancellationToken)
+        public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
             return await _dbService.UpdateGuest(request.Guest);
         }

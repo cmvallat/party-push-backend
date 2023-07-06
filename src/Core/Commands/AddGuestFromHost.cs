@@ -7,7 +7,7 @@ namespace Core.Commands;
 
 public class AddGuestFromHost
 {
-    public class Command : IRequest<bool>
+    public class Command : IRequest<string>
     {
         [Required]
         public string Guest_name { get; set; }
@@ -15,7 +15,7 @@ public class AddGuestFromHost
         public string Party_code { get; set; }
     }
 
-    public class Handler : IRequestHandler<Command, bool>
+    public class Handler : IRequestHandler<Command, string>
     {
         private readonly IPartyService _dbService;
 
@@ -24,7 +24,7 @@ public class AddGuestFromHost
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
         }
 
-        public async ValueTask<bool> Handle(Command request, CancellationToken cancellationToken)
+        public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
             return await _dbService.AddGuestFromHost(request.Guest_name, request.Party_code);
         }
