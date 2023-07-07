@@ -7,13 +7,13 @@ namespace Core.Commands;
 
 public class EndParty
 {
-    public class Command : IRequest<bool>
+    public class Command : IRequest<string>
     {
         [Required]
         public string Party_code { get; set; }
     }
 
-    public class Handler : IRequestHandler<Command, bool>
+    public class Handler : IRequestHandler<Command, string>
     {
         private readonly IPartyService _dbService;
 
@@ -22,7 +22,7 @@ public class EndParty
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
         }
 
-        public async ValueTask<bool> Handle(Command request, CancellationToken cancellationToken)
+        public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
             return await _dbService.EndParty(request.Party_code);
         }
