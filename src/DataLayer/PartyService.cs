@@ -86,6 +86,49 @@ public class PartyService : IPartyService
                     returnedObj.phone_number = reader.GetString("phone_number");
                     returnedObj.spotify_device_id = reader.GetString("spotify_device_id");
                     returnedObj.invite_only = reader.GetInt32("invite_only");
+                    returnedObj.password = reader.GetString("password");
+                }
+            }
+            connection.Close();
+
+            //de facto way to tell if our object is null - if primary keys are null
+            if(returnedObj.party_code == null)
+            {
+                return null;
+            }
+            return returnedObj;
+        }
+    }
+
+    public async Task<Host> GetHostFromCheckIn(string party_code, string phone_number, string password)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            // party_code is a primary key and thus unique constraint in db
+            var hostSelectStatement = "SELECT * FROM Host WHERE party_code = @party_code AND phone_number = @phone_number AND password = @password";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(hostSelectStatement, connection);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+            cmd.Parameters.AddWithValue("@phone_number", phone_number);
+            cmd.Parameters.AddWithValue("@password", password);
+
+            // Execute the command and return the object, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            Models.Host returnedObj = new Models.Host();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    //map response properties to returned object
+                    returnedObj.party_name = reader.GetString("party_name");
+                    returnedObj.party_code = reader.GetString("party_code");
+                    returnedObj.phone_number = reader.GetString("phone_number");
+                    returnedObj.spotify_device_id = reader.GetString("spotify_device_id");
+                    returnedObj.invite_only = reader.GetInt32("invite_only");
+                    returnedObj.password = reader.GetString("password");
                 }
             }
             connection.Close();
@@ -248,12 +291,13 @@ public class PartyService : IPartyService
         string phone_number = host.phone_number;
         string spotify_device_id = host.spotify_device_id;
         int invite_only = host.invite_only;
+        string password = host.password;
 
         using(var connection = await _connectionFactory.GetConnection())
         {
             try{
             // Create the SQL statements you want to execute
-            var hostUpsertStatement = "INSERT INTO Host (party_name, party_code, phone_number, spotify_device_id, invite_only) VALUES (@party_name, @party_code, @phone_number, @spotify_device_id, @invite_only)";
+            var hostUpsertStatement = "INSERT INTO Host (party_name, party_code, phone_number, spotify_device_id, invite_only, password) VALUES (@party_name, @party_code, @phone_number, @spotify_device_id, @invite_only, @password)";
 
             //parameterize the statement with values from the API
             MySqlCommand cmd = new MySqlCommand(hostUpsertStatement, connection);
@@ -262,6 +306,7 @@ public class PartyService : IPartyService
             cmd.Parameters.AddWithValue("@phone_number", phone_number);
             cmd.Parameters.AddWithValue("@spotify_device_id", spotify_device_id);
             cmd.Parameters.AddWithValue("@invite_only", invite_only);
+            cmd.Parameters.AddWithValue("@password", password);
 
             // Execute the command and get the number of rows affected, then close the connection
             // Todo: wrap in try block and handle errors in catch

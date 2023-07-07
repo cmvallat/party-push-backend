@@ -50,7 +50,7 @@ namespace Api.DemoController
         // Todo: add more validation for upserts??
         // Todo: potentially remove spotify_device_id if not needed or make non-required 
 
-        public async Task<IActionResult> CreateParty([Required] string Party_name,[Required] string Party_code,[Required] string Phone_number, [Required] string Spotify_device_id,[Required] int Invite_only)
+        public async Task<IActionResult> CreateParty([Required] string Party_name,[Required] string Party_code,[Required] string Phone_number, [Required] string Spotify_device_id,[Required] int Invite_only, [Required] string Password)
         {
             //validate input - make sure they passed a value for party_code, party_name and phone_number
             if(String.IsNullOrWhiteSpace(Party_code))
@@ -68,13 +68,19 @@ namespace Api.DemoController
                 return StatusCode(500, new { message = "Phone Number was invalid" });
             }
 
+            if(String.IsNullOrWhiteSpace(Password))
+            {
+                return StatusCode(500, new { message = "Phone Number was invalid" });
+            }
+
             Models.Host host = new Models.Host
             {
                 party_name = Party_name,
                 party_code = Party_code,
                 phone_number = Phone_number,
                 spotify_device_id = Spotify_device_id,
-                invite_only = Invite_only
+                invite_only = Invite_only,
+                password = Password
             };
 
             string result = await _mediator.Send(new CreateParty.Command { Host = host });
@@ -228,6 +234,36 @@ namespace Api.DemoController
             }
 
             var host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
+
+            if(host != null)
+            {
+                return Ok(host);
+            }
+
+            return StatusCode(500, new { message = "Failed to get Host from db" });
+        }
+
+        //Get Host endpoint
+        [HttpGet("get-host-from-check-in")]
+
+        // Todo: change from async to sync
+        public async Task<IActionResult> GetHostFromCheckIn([Required] string party_code, [Required] string phone_number, [Required] string password)
+        {
+            //validate input - make sure they passed a value for party_code
+            if(String.IsNullOrWhiteSpace(party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+            if(String.IsNullOrWhiteSpace(phone_number))
+            {
+                return StatusCode(500, new { message = "Phone Number was invalid" });
+            }
+            if(String.IsNullOrWhiteSpace(password))
+            {
+                return StatusCode(500, new { message = "Password was invalid" });
+            }
+
+            var host = await _mediator.Send(new HostFromCheckInQuery.Query() {Party_code = party_code, Phone_Number = phone_number, Password = password});
 
             if(host != null)
             {
