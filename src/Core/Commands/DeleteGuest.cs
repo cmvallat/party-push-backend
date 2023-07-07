@@ -10,7 +10,9 @@ public class DeleteGuest
     public class Command : IRequest<string>
     {
         [Required]
-        public Guest Guest { get; set; }
+        public string Party_code { get; set; }
+        [Required]
+        public string Guest_name { get; set; }
     }
 
     public class Handler : IRequestHandler<Command, string>
@@ -24,7 +26,7 @@ public class DeleteGuest
 
         public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.DeleteGuest(request.Guest);
+            return await _dbService.DeleteGuest(request.Party_code, request.Guest_name);
         }
     }
 }

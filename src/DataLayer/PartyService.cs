@@ -336,10 +336,12 @@ public class PartyService : IPartyService
         }
     }
 
-    public async Task<string> DeleteGuest(Guest guest)
+    public async Task<string> DeleteGuest(string Party_code, string Guest_name)
     {
-        string guest_name = guest.guest_name;
-        string party_code = guest.party_code;
+        //doesn't matter if they are at the party currently or not, we are deleting them forever
+        //so we don't need at_party
+        string party_code = Party_code;
+        string guest_name = Guest_name;
 
         using(var connection = await _connectionFactory.GetConnection())
         {

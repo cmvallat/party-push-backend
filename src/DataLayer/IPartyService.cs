@@ -11,7 +11,7 @@ public interface IPartyService
     Task<Guest> GetGuest(string party_code, string guest_name);
     Task<Host> GetHost(string party_code);
     Task<Host> GetHostFromCheckIn(string party_code, string phone_numner, string password);
-    Task<string> DeleteGuest(Guest guest);
+    Task<string> DeleteGuest(string party_code, string guest_name);
     Task<List<Guest>> GetGuestList(string party_code);
     Task<string> EndParty(string party_code);
 

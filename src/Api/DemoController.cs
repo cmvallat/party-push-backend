@@ -161,15 +161,14 @@ namespace Api.DemoController
            {
                 return StatusCode(500, new { message = "Couldn't find a party with this party code." });
            }
-           //if party is open to the public, just go ahead and add guest (if they aren't already at party)
+           //if party is open to the public
            if(corresponding_host.invite_only == 0)
            {
+                //get guest and see if they are currently at that party
                 var invited_guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
-                if(invited_guest.at_party == 1)
-                {
-                    return StatusCode(500, new { message = "There is already someone at this party with this name. Please try checking in again with a new name." });
-                }
-                else if(invited_guest.at_party == 0 || invited_guest == null) //if not currently at party
+                //if they are not, let them in
+
+                if(invited_guest == null || invited_guest.at_party == 0) //if not currently at party
                 {
                     Guest matching_guest = new Guest
                     {
@@ -178,6 +177,12 @@ namespace Api.DemoController
                         at_party = 1
                     };
                     result = await _mediator.Send(new AddGuestFromCheckIn.Command { Guest = matching_guest});
+                }
+
+                //if they are, don't let them in (duplicate)
+                else if(invited_guest.at_party == 1)
+                {
+                    return StatusCode(500, new { message = "There is already someone at this party with this name. Please try checking in again with a new name." });
                 }
                 
            }
@@ -305,27 +310,20 @@ namespace Api.DemoController
         [HttpPost("delete-guest")]
 
         // Todo: change from async to sync
-        public async Task<IActionResult> DeleteGuestByNameAndCode([Required] string Guest_name, [Required] string Party_code, [Required] int At_party)
+        public async Task<IActionResult> DeleteGuestByNameAndCode([Required] string guest_name, [Required] string party_code)
         {
             //validate input - make sure they passed a value for party_code and guest_name
-            if(String.IsNullOrWhiteSpace(Party_code))
+            if(String.IsNullOrWhiteSpace(party_code))
             {
                 return StatusCode(500, new { message = "Party Code was invalid" });
             }
 
-            if(String.IsNullOrWhiteSpace(Guest_name))
+            if(String.IsNullOrWhiteSpace(guest_name))
             {
                 return StatusCode(500, new { message = "Guest Name was invalid" });
             }
 
-            Guest guest = new Guest
-            {
-                guest_name = Guest_name,
-                party_code = Party_code,
-                at_party = At_party
-            };
-
-            var result = await _mediator.Send(new DeleteGuest.Command() {Guest = guest});
+            var result = await _mediator.Send(new DeleteGuest.Command() {Party_code = party_code, Guest_name = guest_name});
 
             if(result == "Success!")
             {
@@ -347,18 +345,28 @@ namespace Api.DemoController
                 return StatusCode(500, new { message = "Party Code was invalid" });
             }
 
-            List<Guest> guest_list = await _mediator.Send(new CurrentGuestsQuery.Query() {Party_code = party_code});
+            //get party of the guests - don't really need to do this unless we want to throw specific errors (which for now I have decided we do)
+            Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
+            if(corresponding_host == null)
+            {
+                return StatusCode(500, new { message = "Could not get guest list, as that party does not exist" });
+            }
+            else
+            {
+                List<Guest> guest_list = await _mediator.Send(new CurrentGuestsQuery.Query() {Party_code = party_code});
+                
+                //if guest list is not empty, return the guest list
+                if(guest_list != null)
+                {
+                    return Ok(guest_list);
+                }
+                else if(guest_list == null) //if it is empty, then there are no guests at that party
+                {
+                    //Todo: eventually move to handle on FE instead of exception!!!
+                    return StatusCode(200, new { message = "There are currently no guests at your party" });
+                }
+            }
             
-            //if guest list is not empty, return the guest list
-            if(guest_list != null)
-            {
-                return Ok(guest_list);
-            }
-            else if(guest_list == null) //if it is empty, throw exception
-            {
-                //Todo: eventually move to handle on FE instead of exception!!!
-                return StatusCode(200, new { message = "There are currently no guests at your party" });
-            }
             //hopefully this is unreachable
             return StatusCode(500, new { message = "Something went wrong, failed to get Guest list from db" });
             
