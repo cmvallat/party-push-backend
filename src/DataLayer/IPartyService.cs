@@ -18,10 +18,9 @@ public interface IPartyService
     
     //Refreshment API functions
     Task<List<Food>> GetCurrentFoodList(string party_code);
-    Task<string> AddFoodItem(string party_code);
-    Task<string> RemoveFoodItem(string party_code);
-    Task<string> ReportFoodStatus(string party_code);
-    Task<string> HostChangeFoodStatus(string party_code);
+    Task<string> AddFoodItem(string party_code, string item_name);
+    Task<string> RemoveFoodItem(string party_code, string item_name);
+    Task<string> ChangeFoodStatus(string party_code, string status, string item_name);
 
     //Todo: add spotify API functions when implementing feature
 }

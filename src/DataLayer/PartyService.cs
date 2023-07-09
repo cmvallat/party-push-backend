@@ -349,8 +349,8 @@ public class PartyService : IPartyService
             //remember, party_code is a foreign key, so the guest needs to be at an existing party
             //meaning there needs to be an entry in Host with the same party_code
 
-            //MAKE SURE SQL_SAFE_UPDATES = 1 IN ORDER TO BE ABLE TO DELETE
-            //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 1;
+            //MAKE SURE SQL_SAFE_UPDATES = 0 IN ORDER TO BE ABLE TO DELETE
+            //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 0;
             var guestDeleteStatement = "DELETE FROM Guest WHERE guest_name = @guest_name AND party_code = @party_code";
 
             //parameterize the statement with values from the API
@@ -429,8 +429,8 @@ public class PartyService : IPartyService
             //remember!!! party_code is a foreign key, so the guest needs to be at an existing party
             //meaning there needs to be an entry in Host with the same party_code
 
-            //MAKE SURE SQL_SAFE_UPDATES = 1 IN ORDER TO BE ABLE TO DELETE
-            //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 1;
+            //MAKE SURE SQL_SAFE_UPDATES = 0 IN ORDER TO BE ABLE TO DELETE
+            //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 0;
             var guestDeleteStatement = "DELETE FROM Guest WHERE party_code = @party_code;";
             var hostDeleteStatement = "DELETE FROM Host WHERE party_code = @party_code";
 
@@ -481,23 +481,150 @@ public class PartyService : IPartyService
 
     public async Task<List<Food>> GetCurrentFoodList(string party_code)
     {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            var foodSelectStatement = "SELECT * FROM Food WHERE party_code = @party_code";
 
-    }
-    public async Task<string> AddFoodItem(string party_code)
-    {
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(foodSelectStatement, connection);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
 
-    }
-    public async Task<string> RemoveFoodItem(string party_code)
-    {
+            // Execute the command and return the object, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            List<Food> returnedObj = new List<Food>();
 
-    }
-    public async Task<string> ReportFoodStatus(string party_code)
-    {
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    Food f = new Food();
+                    f.item_name = reader.GetString("item_name");
+                    f.party_code = reader.GetString("party_code");
+                    f.status = reader.GetString("status");
+                    returnedObj.Add(f);
+                }
+            }
+            connection.Close();
 
+            //if the list of guests is not empty
+            if(returnedObj.Count() != 0)
+            {
+                return returnedObj;
+            }
+            else if (returnedObj.Count() == 0) //if it is, return null
+            {
+                return null;
+            }
+            else //something else went wrong, throw exception
+            {
+                throw new Exception("Something went wrong getting the guest list from db");
+            }
+        }
     }
-    public async Task<string> HostChangeFoodStatus(string party_code)
+
+    public async Task<string> AddFoodItem(string party_code, string item_name)
     {
-        
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            //remember, party_code is a foreign key, so the guest needs to be at an existing party
+            //meaning there needs to be an entry in Host with the same party_code
+            var status = "full";
+            var foodAddStatement = "INSERT INTO Food (item_name, party_code, status) VALUES (@item_name, @party_code, @status)";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(foodAddStatement, connection);
+            cmd.Parameters.AddWithValue("@item_name", item_name);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+            cmd.Parameters.AddWithValue("@status", status);
+
+            // Execute the command and get the number of rows affected, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            int rowsAffected = cmd.ExecuteNonQuery();
+            connection.Close();
+            
+            //if something was added to the db, return success
+            if(rowsAffected != 0)
+            {
+                return "Success!";
+            }
+            
+            //if nothing was added to the db, return error
+            return "Could not add food item to the database";
+        }
+    }
+
+    public async Task<string> RemoveFoodItem(string party_code, string item_name)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            //remember, party_code is a foreign key, so the guest needs to be at an existing party
+            //meaning there needs to be an entry in Host with the same party_code
+
+            //MAKE SURE SQL_SAFE_UPDATES = 0 IN ORDER TO BE ABLE TO DELETE
+            //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 0;
+            var foodDeleteStatement = "DELETE FROM Food WHERE item_name = @item_name AND party_code = @party_code";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(foodDeleteStatement, connection);
+            cmd.Parameters.AddWithValue("@item_name", item_name);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+
+            // Execute the command and get the number of rows affected, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            int rowsAffected = cmd.ExecuteNonQuery();
+            connection.Close();
+            
+            //if something was deleted from the db, return success
+            if(rowsAffected != 0)
+            {
+                return "Success!";
+            }
+            
+            //if nothing was deleted from the db, return error
+            return "Could not delete food item from database";
+        }
+    }
+
+    public async Task<string> ChangeFoodStatus(string party_code, string status, string item_name)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            try
+            {
+                // Create the SQL statements you want to execute
+                //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
+                //meaning there needs to be an entry in Host with the same party_code
+                var foodUpdateStatement = "UPDATE Food SET status = @status WHERE party_code = @party_code AND item_name = @item_name";
+
+                //parameterize the statement with values from the API
+                MySqlCommand cmd = new MySqlCommand(foodUpdateStatement, connection);
+                cmd.Parameters.AddWithValue("@item_name", item_name);
+                cmd.Parameters.AddWithValue("@party_code", party_code);
+                cmd.Parameters.AddWithValue("@status", status);
+
+                // Execute the command and get the number of rows affected, then close the connection
+                // Todo: wrap in try block and handle errors in catch
+                int rowsAffected = cmd.ExecuteNonQuery();
+                connection.Close();
+                
+                //if something was updated in the db, return success
+                if(rowsAffected != 0)
+                {
+                    return "Success!";
+                }
+                
+                //if nothing was updated in the db, but not a SQL error, return generic error message
+                return "Something wrong with updating the food status";
+            }
+            catch (MySqlException ex)
+            {
+                // throw SQL exception (message, not really an exception)
+                return "SQL exception: Something went wrong with updating the food 'status' field.";
+            }
+        }
     }
 
     #endregion

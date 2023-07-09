@@ -429,75 +429,120 @@ namespace Api.DemoController
         #endregion
 
         #region Refreshment APIs
-           //End party (delete all guests and host) endpoint
+
+        //Adds a new row in Food table in DB representing a food item
         [HttpPost("add-food-item-from-host")]
 
-        // Todo: change from async to sync
-        public async Task<IActionResult> AddFoodItemFromHost([Required] string party_code, [Required] string guest_name)
+        public async Task<IActionResult> AddFoodItemFromHost([Required] string party_code, [Required] string item_name)
         {
-            //validate input - make sure they passed a value for party_code and guest_name
+             //validate input - make sure they passed a value for party_code and guest_name
             if(String.IsNullOrWhiteSpace(party_code))
             {
                 return StatusCode(500, new { message = "Party Code was invalid" });
             }
-            if(String.IsNullOrWhiteSpace(guest_name))
+            if(String.IsNullOrWhiteSpace(item_name))
             {
-                return StatusCode(500, new { message = "Guest Name was invalid" });
+                return StatusCode(500, new { message = "Item Name was invalid" });
             }
-            Guest new_guest_details = new Guest
-            {
-                guest_name = guest_name,
-                party_code = party_code,
-                at_party = 0
-            };
-            var result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
+            
+            var result = await _mediator.Send(new AddFoodItem.Command { Party_code = party_code, Item_name = item_name });
 
             if(result == "Success!")
             {
-                return Ok(result);
+                return Ok("Success! Food item added to db");
             }
 
-            return StatusCode(500, new { message = "Failed to remove guest from party in db" });
+            return StatusCode(500, new { message = "Failed to add food item for party in db" });
         }
 
-        //End party (delete all guests and host) endpoint
+        //Removes a row representing a food item from the Food table in DB
         [HttpPost("remove-food-item-from-host")]
 
-        // Todo: change from async to sync
-        public async Task<IActionResult> RemoveFoodItemFromHost([Required] string party_code, [Required] string guest_name)
+        public async Task<IActionResult> RemoveFoodItemFromHost([Required] string party_code, [Required] string item_name)
         {
             //validate input - make sure they passed a value for party_code and guest_name
             if(String.IsNullOrWhiteSpace(party_code))
             {
                 return StatusCode(500, new { message = "Party Code was invalid" });
             }
-            if(String.IsNullOrWhiteSpace(guest_name))
+            if(String.IsNullOrWhiteSpace(item_name))
             {
-                return StatusCode(500, new { message = "Guest Name was invalid" });
+                return StatusCode(500, new { message = "Item Name was invalid" });
             }
-            Guest new_guest_details = new Guest
-            {
-                guest_name = guest_name,
-                party_code = party_code,
-                at_party = 0
-            };
-            var result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
+            
+            var result = await _mediator.Send(new RemoveFoodItem.Command { Party_code = party_code, Item_name = item_name });
 
             if(result == "Success!")
             {
-                return Ok(result);
+                return Ok("Success! Food item removed from db");
             }
 
-            return StatusCode(500, new { message = "Failed to remove guest from party in db" });
+            return StatusCode(500, new { message = "Failed to remove food item from party in db" });
         }
 
-           //End party (delete all guests and host) endpoint
+        //Updates the food status when a host changes status of an item and texts guests to inform them
+        //Todo: add guest phone_number column and texting functionality
         [HttpPost("change-food-status-from-host")]
 
-        // Todo: change from async to sync
-        public async Task<IActionResult> ChangeFoodStatusFromHost([Required] string party_code, [Required] string guest_name)
+        public async Task<IActionResult> ChangeFoodStatusFromHost([Required] string party_code, [Required] string status, [Required] string item_name)
         {
-            //validate input - make sure they passed a value for party_code and guest_name
+             var result = "false";
+            //validate input - make sure they passed a value for party_code, status and item_name
+            if(String.IsNullOrWhiteSpace(party_code))
+            {
+                return StatusCode(500, new { message = "Party Code was invalid" });
+            }
+            if(String.IsNullOrWhiteSpace(status))
+            {
+                return StatusCode(500, new { message = "Status was invalid b/c it was null or whitespace" });
+            }
+            //these are the only 3 valid statuses - eventually move to enum?
+            if(status != "full" && status != "low" && status != "out")
+            {
+                return StatusCode(500, new { message = "Status was invalid b/c it was not 'full', 'low', or 'out' " });
+            }
+            if(String.IsNullOrWhiteSpace(item_name))
+            {
+                return StatusCode(500, new { message = "Item Name was invalid" });
+            }
+
+            Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
+            if(corresponding_host == null)
+            {
+                return StatusCode(500, new { message = "Could not change food status for this party, as party does not exist in database" });
+            }
+            else
+            {
+                //change status of food item in db
+                result = await _mediator.Send(new ChangeFoodStatus.Command { Status = status, Item_name = item_name, Party_code = party_code });
+            }
+
+            if(result == "Success!")
+            {
+                //if successfully updated status, text the guests to let them know
+
+                //Todo: Get list of all Guests at this party (where at_party = 1) and their phone_numbers
+                //or better yet, create a guest phone number list when creating party and just update
+                //every time a guest checks in
+
+                string text = item_name + " has been reported as status " + status + " by host.";
+                //foreach guest, text
+                //Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
+                return Ok(result);
+            }
+
+            return StatusCode(500, new { message = "Failed to change food item status from host" });
+        }
+
+        //Texts host when a guest reports food as low or out and updates status of item
+        //Could re-use this endpoint and pass in "from host" value to determine whether to text host or guests
+        //but that would be confusing to handle on front end
+        [HttpPost("change-food-status-from-guest")]
+
+        public async Task<IActionResult> ChangeFoodStatusFromGuest([Required] string party_code, [Required] string status, [Required] string guest_name, [Required] string item_name)
+        {
+            var result = "false";
+            //validate input - make sure they passed a value for party_code, guest_name, status and item_name
             if(String.IsNullOrWhiteSpace(party_code))
             {
                 return StatusCode(500, new { message = "Party Code was invalid" });
@@ -506,82 +551,78 @@ namespace Api.DemoController
             {
                 return StatusCode(500, new { message = "Guest Name was invalid" });
             }
-            Guest new_guest_details = new Guest
+            if(String.IsNullOrWhiteSpace(status))
             {
-                guest_name = guest_name,
-                party_code = party_code,
-                at_party = 0
-            };
-            var result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
+                return StatusCode(500, new { message = "Status was invalid b/c it was null or whitespace" });
+            }
+            //these are the only 3 valid statuses - eventually move to enum?
+            if(status != "full" && status != "low" && status != "out")
+            {
+                return StatusCode(500, new { message = "Status was invalid b/c it was not 'full', 'low', or 'out' " });
+            }
+            if(String.IsNullOrWhiteSpace(item_name))
+            {
+                return StatusCode(500, new { message = "Item Name was invalid" });
+            }
+
+            Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
+            if(corresponding_host == null)
+            {
+                return StatusCode(500, new { message = "Could not report food status for this party, as party does not exist in database" });
+            }
+            else
+            {
+                //change status of food item in db
+                result = await _mediator.Send(new ChangeFoodStatus.Command { Status = status, Item_name = item_name, Party_code = party_code });
+            }
 
             if(result == "Success!")
             {
+                //if successfully updated status, text the host to let them know
+                string text = guest_name + " reported " + item_name + " as " + status;
+                Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
                 return Ok(result);
             }
 
-            return StatusCode(500, new { message = "Failed to remove guest from party in db" });
+            return StatusCode(500, new { message = "Failed to report item status to host" });
         }
 
-           //End party (delete all guests and host) endpoint
-        [HttpPost("report-food-status-from-guest")]
-
-        // Todo: change from async to sync
-        public async Task<IActionResult> ReportFoodStatusFromGuest([Required] string party_code, [Required] string guest_name)
-        {
-            //validate input - make sure they passed a value for party_code and guest_name
-            if(String.IsNullOrWhiteSpace(party_code))
-            {
-                return StatusCode(500, new { message = "Party Code was invalid" });
-            }
-            if(String.IsNullOrWhiteSpace(guest_name))
-            {
-                return StatusCode(500, new { message = "Guest Name was invalid" });
-            }
-            Guest new_guest_details = new Guest
-            {
-                guest_name = guest_name,
-                party_code = party_code,
-                at_party = 0
-            };
-            var result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
-
-            if(result == "Success!")
-            {
-                return Ok(result);
-            }
-
-            return StatusCode(500, new { message = "Failed to remove guest from party in db" });
-        }
-
-           //End party (delete all guests and host) endpoint
+        //Get current list of Food items at a certain party
         [HttpPost("get-current-food-list")]
 
-        // Todo: change from async to sync
-        public async Task<IActionResult> GetCurrentFoodList([Required] string party_code, [Required] string guest_name)
+        public async Task<IActionResult> GetCurrentFoodList([Required] string party_code)
         {
-            //validate input - make sure they passed a value for party_code and guest_name
+             //validate input - make sure they passed a value for party_code
             if(String.IsNullOrWhiteSpace(party_code))
             {
                 return StatusCode(500, new { message = "Party Code was invalid" });
             }
-            if(String.IsNullOrWhiteSpace(guest_name))
-            {
-                return StatusCode(500, new { message = "Guest Name was invalid" });
-            }
-            Guest new_guest_details = new Guest
-            {
-                guest_name = guest_name,
-                party_code = party_code,
-                at_party = 0
-            };
-            var result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
 
-            if(result == "Success!")
+            //get party that the food is being added to - don't really need to do this unless we want to throw specific errors (which we do for now)
+            Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
+            if(corresponding_host == null)
             {
-                return Ok(result);
+                return StatusCode(500, new { message = "Could not get food list, as that party does not exist" });
             }
-
-            return StatusCode(500, new { message = "Failed to remove guest from party in db" });
+            else
+            {
+                List<Food> food_list = await _mediator.Send(new GetCurrentFoodListQuery.Query() {Party_code = party_code});
+                
+                //if food list is not empty, return the food list
+                if(food_list != null)
+                {
+                    return Ok(food_list);
+                }
+                else if(food_list == null) //if it is empty, then there are no food items at that party
+                {
+                    //Should display on initial management page loads (guest and host) and when no items
+                    return StatusCode(200, new { message = "There are currently no food items at your party. Click the 'add food' button to add items available to guests." });
+                }
+            }
+            
+            //hopefully this is unreachable
+            return StatusCode(500, new { message = "Something went wrong, failed to get Food list from db" });
+            
         }
 
         #endregion

@@ -9,8 +9,8 @@ public class AddFoodItem
 {
     public class Command : IRequest<string>
     {
-        // [Required]
-        // public string Guest_name { get; set; }
+        [Required]
+        public string Item_name { get; set; }
         [Required]
         public string Party_code { get; set; }
     }
@@ -26,7 +26,7 @@ public class AddFoodItem
 
         public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.AddFoodItem(request.Party_code);
+            return await _dbService.AddFoodItem(request.Party_code, request.Item_name);
         }
     }
 }
