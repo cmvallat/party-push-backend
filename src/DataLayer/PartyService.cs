@@ -20,7 +20,7 @@ public class PartyService : IPartyService
 
     #endregion
 
-    #region DB calls and methods
+    #region DB calls and methods for Check-In APIs
 
     public async Task<Guest> GetGuest(string party_code, string guest_name)
     {
@@ -473,6 +473,31 @@ public class PartyService : IPartyService
             //if the party wasn't deleted from the db, return error
             return "Something went wrong deleting Host from database";
         }
+    }
+
+    #endregion
+
+    #region DB calls and methods for Refreshment APIs
+
+    public async Task<List<Food>> GetCurrentFoodList(string party_code)
+    {
+
+    }
+    public async Task<string> AddFoodItem(string party_code)
+    {
+
+    }
+    public async Task<string> RemoveFoodItem(string party_code)
+    {
+
+    }
+    public async Task<string> ReportFoodStatus(string party_code)
+    {
+
+    }
+    public async Task<string> HostChangeFoodStatus(string party_code)
+    {
+        
     }
 
     #endregion
