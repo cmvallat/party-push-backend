@@ -4,6 +4,7 @@ namespace DataLayer;
 
 public interface IPartyService
 {
+    //Check-In API functions
     Task<string> AddGuestFromHost(string guest_name, string party_code);
     Task<string> AddGuestFromCheckIn(Guest guest);
     Task<string> UpdateGuest(Guest guest);
@@ -14,5 +15,12 @@ public interface IPartyService
     Task<string> DeleteGuest(string party_code, string guest_name);
     Task<List<Guest>> GetGuestList(string party_code);
     Task<string> EndParty(string party_code);
+    
+    //Refreshment API functions
+    Task<List<Food>> GetCurrentFoodList(string party_code);
+    Task<string> AddFoodItem(string party_code, string item_name);
+    Task<string> RemoveFoodItem(string party_code, string item_name);
+    Task<string> ChangeFoodStatus(string party_code, string status, string item_name);
 
+    //Todo: add spotify API functions when implementing feature
 }

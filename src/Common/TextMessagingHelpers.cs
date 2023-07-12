@@ -15,7 +15,7 @@ namespace Common.TextMessagingHelpers
 
             //Todo: store these in secrets manager or environment variables
             string accountSid = "AC204481289afbc1ff5711342416e181fb";
-            string authToken = "054ec81dd2e884d347d72067654d98cd";
+            string authToken = "d4d59b8880574c388a79e2cece63e005";
 
             TwilioClient.Init(accountSid, authToken);
 
