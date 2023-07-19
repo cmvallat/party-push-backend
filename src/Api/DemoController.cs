@@ -58,8 +58,9 @@ namespace Api.DemoController
             if(result == "Success!")
             {
                 //on creation, text Host to confirm
-                string message = "Your party, " + Party_name + ", was successfully created!";
-                var returnedString = Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(Phone_number, message);
+                //functionality will be added later. commented out for now
+                // string message = "Your party, " + Party_name + ", was successfully created!";
+                // var returnedString = Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(Phone_number, message);
                 return Ok(result);
             }
 
@@ -429,8 +430,8 @@ namespace Api.DemoController
             if(result == "Success!")
             {
                 //if successfully updated status, text the host to let them know
-                string text = guest_name + " reported " + item_name + " as " + status;
-                Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
+                // string text = guest_name + " reported " + item_name + " as " + status;
+                // Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
                 return Ok(result);
             }
 
