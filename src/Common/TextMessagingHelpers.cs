@@ -5,9 +5,9 @@ namespace Common.TextMessagingHelpers
 {
     public class TextMessagingHelpers
     {
-        public static string SendSMSMessage(string phoneNum, string messageBody)
-        {
-           //logic for sending message here
-        }
+        // public static string SendSMSMessage(string phoneNum, string messageBody)
+        // {
+        //    //logic for sending message here
+        // }
     }
 }
