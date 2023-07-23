@@ -67,7 +67,7 @@ namespace Api.DemoController
                 //functionality will be added later. commented out for now
                 // string message = "Your party, " + Party_name + ", was successfully created!";
                 // var returnedString = Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(Phone_number, message);
-                return Ok(result);
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Failed to insert Host into db" });
@@ -107,7 +107,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return Ok(result);
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = result });
@@ -196,7 +196,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return Ok();
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Something went wrong." });
@@ -218,7 +218,7 @@ namespace Api.DemoController
 
             if(host != null)
             {
-                return Ok(host);
+                return StatusCode(200, new { message = host });
             }
 
             return StatusCode(500, new { message = "Failed to get Host from db" });
@@ -240,7 +240,7 @@ namespace Api.DemoController
 
             if(host != null)
             {
-                return Ok(host);
+                return StatusCode(200, new { message = host });
             }
 
             return StatusCode(500, new { message = "Failed to get Host from db" });
@@ -261,7 +261,7 @@ namespace Api.DemoController
 
             if(guest != null)
             {
-                return Ok(guest);
+                return StatusCode(200, new { message = guest });
             }
 
             return StatusCode(500, new { message = "Failed to get Guest from db" });
@@ -282,7 +282,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return Ok();
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Failed to delete Guest from db" });
@@ -313,12 +313,12 @@ namespace Api.DemoController
                 //if guest list is not empty, return the guest list
                 if(guest_list != null)
                 {
-                    return Ok(guest_list);
+                    return StatusCode(200, new { guestList = guest_list });
                 }
                 else if(guest_list == null) //if it is empty, then there are no guests at that party
                 {
                     //Todo: eventually move to handle on FE instead of exception!!!
-                    return StatusCode(200, new { message = "There are currently no guests at your party" });
+                    return StatusCode(200, new { guestList = new List<Guest>(){} });
                 }
             }
             
@@ -342,7 +342,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return Ok();
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Failed to get delete party from db" });
@@ -370,7 +370,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return Ok(result);
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Failed to remove guest from party in db" });
@@ -395,7 +395,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return Ok("Success! Food item added to db");
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Failed to add food item for party in db" });
@@ -416,7 +416,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return Ok("Success! Food item removed from db");
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Failed to remove food item from party in db" });
@@ -468,7 +468,7 @@ namespace Api.DemoController
                 string text = item_name + " has been reported as status " + status + " by host.";
                 //foreach guest, text
                 //Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
-                return Ok(result);
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Failed to change food item status from host" });
@@ -516,7 +516,7 @@ namespace Api.DemoController
                 //if successfully updated status, text the host to let them know
                 // string text = guest_name + " reported " + item_name + " as " + status;
                 // Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
-                return Ok(result);
+                return StatusCode(200, new { message = result });
             }
 
             return StatusCode(500, new { message = "Failed to report item status to host" });
@@ -548,7 +548,7 @@ namespace Api.DemoController
                 //if food list is not empty, return the food list
                 if(food_list != null)
                 {
-                    return Ok(food_list);
+                    return StatusCode(200, new { message = food_list });
                 }
                 else if(food_list == null) //if it is empty, then there are no food items at that party
                 {
