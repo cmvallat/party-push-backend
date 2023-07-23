@@ -40,8 +40,14 @@ namespace Api.DemoController
         //Todo: potentially remove spotify_device_id if not needed or make non-required
         [HttpPost("create-party")] 
 
-        public async Task<IActionResult> CreateParty([Required] string Party_name,[Required] string Party_code,[Required] string Phone_number, [Required] string Spotify_device_id,[Required] int Invite_only, [Required] string Password)
+        public async Task<IActionResult> CreateParty(string Party_name, string Party_code, string Phone_number, string Spotify_device_id, int Invite_only, string Password)
         {
+            List<String> paramsList = new List<String>(){Party_name, Party_code, Phone_number, Spotify_device_id, Password};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             //create the Host that we want to upsert
             Models.Host host = new Models.Host
             {
@@ -72,8 +78,14 @@ namespace Api.DemoController
         //Todo: move logic to command
         [HttpPost("add-guest-from-host")]
 
-        public async Task<IActionResult> AddGuestFromHost([Required] int host_invite_only, [Required] string guest_name, [Required] string party_code)
+        public async Task<IActionResult> AddGuestFromHost(int host_invite_only, string guest_name, string party_code)
         {
+            List<String> paramsList = new List<String>(){guest_name, party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             string result = "Success!";
             
             //determine whether the party is open invite
@@ -106,8 +118,14 @@ namespace Api.DemoController
         //Todo: move logic to command
         [HttpPost("guest-check-in")]
 
-        public async Task<IActionResult> CheckInGuest([Required] string party_code, [Required] string guest_name)
+        public async Task<IActionResult> CheckInGuest(string party_code, string guest_name)
         {
+            List<String> paramsList = new List<String>(){guest_name, party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             string result = "Success!";
 
            //before we do anything, make sure the party exists
@@ -188,8 +206,14 @@ namespace Api.DemoController
         //Used only for internal purposes (other endpoints call it) so no need for password
         [HttpGet("get-host")]
 
-        public async Task<IActionResult> GetHostByPartyCode([Required] string party_code)
+        public async Task<IActionResult> GetHostByPartyCode(string party_code)
         {
+            List<String> paramsList = new List<String>(){party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             var host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
 
             if(host != null)
@@ -204,8 +228,14 @@ namespace Api.DemoController
         //Used for the host login page (hence needing the password)
         [HttpGet("get-host-from-check-in")]
 
-        public async Task<IActionResult> GetHostFromCheckIn([Required] string party_code, [Required] string phone_number, [Required] string password)
+        public async Task<IActionResult> GetHostFromCheckIn(string party_code, string phone_number, string password)
         {
+            List<String> paramsList = new List<String>(){phone_number, party_code, password};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             var host = await _mediator.Send(new HostFromCheckInQuery.Query() {Party_code = party_code, Phone_Number = phone_number, Password = password});
 
             if(host != null)
@@ -219,8 +249,14 @@ namespace Api.DemoController
         //Search for a particular guest at a particular party in database
         [HttpGet("get-guest")]
 
-        public async Task<IActionResult> GetGuestByNameAndCode([Required] string guest_name, [Required] string party_code)
+        public async Task<IActionResult> GetGuestByNameAndCode(string guest_name, string party_code)
         {
+            List<String> paramsList = new List<String>(){guest_name, party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             var guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
 
             if(guest != null)
@@ -234,8 +270,14 @@ namespace Api.DemoController
         //Remove a guest permanently from the party (only host can do this)
         [HttpPost("delete-guest")]
 
-        public async Task<IActionResult> DeleteGuestByNameAndCode([Required] string guest_name, [Required] string party_code)
+        public async Task<IActionResult> DeleteGuestByNameAndCode(string guest_name, string party_code)
         {
+            List<String> paramsList = new List<String>(){guest_name, party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             var result = await _mediator.Send(new DeleteGuest.Command() {Party_code = party_code, Guest_name = guest_name});
 
             if(result == "Success!")
@@ -249,8 +291,14 @@ namespace Api.DemoController
         //Get the list of current guests at a particular party
         [HttpGet("get-current-guest-list")]
 
-        public async Task<IActionResult> GetCurrentGuestListByCode([Required] string party_code)
+        public async Task<IActionResult> GetCurrentGuestListByCode(string party_code)
         {   
+            List<String> paramsList = new List<String>(){party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             //get party that we are checking the guest list for
             Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
 
@@ -282,8 +330,14 @@ namespace Api.DemoController
         //End party (delete all guests and Host by party_code)
         [HttpPost("end-party")]
 
-        public async Task<IActionResult> EndParty([Required] string party_code)
+        public async Task<IActionResult> EndParty(string party_code)
         {
+            List<String> paramsList = new List<String>(){party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
            var result = await _mediator.Send(new EndParty.Command { Party_code = party_code });
 
             if(result == "Success!")
@@ -298,8 +352,14 @@ namespace Api.DemoController
         //Won't show up on current guest list
         [HttpPost("leave-party")]
 
-        public async Task<IActionResult> GuestLeavesParty([Required] string party_code, [Required] string guest_name)
+        public async Task<IActionResult> GuestLeavesParty(string party_code, string guest_name)
         {
+            List<String> paramsList = new List<String>(){guest_name, party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             Guest new_guest_details = new Guest
             {
                 guest_name = guest_name,
@@ -323,8 +383,14 @@ namespace Api.DemoController
         //Adds a new row in Food table in DB representing a food item
         [HttpPost("add-food-item-from-host")]
 
-        public async Task<IActionResult> AddFoodItemFromHost([Required] string party_code, [Required] string item_name)
+        public async Task<IActionResult> AddFoodItemFromHost(string party_code, string item_name)
         {
+            List<String> paramsList = new List<String>(){item_name, party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             var result = await _mediator.Send(new AddFoodItem.Command { Party_code = party_code, Item_name = item_name });
 
             if(result == "Success!")
@@ -338,8 +404,14 @@ namespace Api.DemoController
         //Removes a row representing a food item from the Food table in DB
         [HttpPost("remove-food-item-from-host")]
 
-        public async Task<IActionResult> RemoveFoodItemFromHost([Required] string party_code, [Required] string item_name)
+        public async Task<IActionResult> RemoveFoodItemFromHost(string party_code, string item_name)
         {
+            List<String> paramsList = new List<String>(){item_name, party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             var result = await _mediator.Send(new RemoveFoodItem.Command { Party_code = party_code, Item_name = item_name });
 
             if(result == "Success!")
@@ -354,8 +426,14 @@ namespace Api.DemoController
         //Todo: add guest phone_number column and texting functionality
         [HttpPost("change-food-status-from-host")]
 
-        public async Task<IActionResult> ChangeFoodStatusFromHost([Required] string party_code, [Required] string status, [Required] string item_name)
+        public async Task<IActionResult> ChangeFoodStatusFromHost(string party_code, string status, string item_name)
         {
+            List<String> paramsList = new List<String>(){item_name, party_code, status};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             var result = "false";
 
             //valid status parameter - these are the only 3 valid statuses
@@ -401,8 +479,14 @@ namespace Api.DemoController
         //but that would be confusing to handle on front end
         [HttpPost("change-food-status-from-guest")]
 
-        public async Task<IActionResult> ChangeFoodStatusFromGuest([Required] string party_code, [Required] string status, [Required] string guest_name, [Required] string item_name)
+        public async Task<IActionResult> ChangeFoodStatusFromGuest(string party_code, string status, string guest_name, string item_name)
         {
+            List<String> paramsList = new List<String>(){guest_name, party_code, status, item_name};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             //guest name should come from FE (guest management page)
             var result = "false";
 
@@ -441,8 +525,14 @@ namespace Api.DemoController
         //Get current list of Food items at a certain party
         [HttpPost("get-current-food-list")]
 
-        public async Task<IActionResult> GetCurrentFoodList([Required] string party_code)
+        public async Task<IActionResult> GetCurrentFoodList(string party_code)
         {
+            List<String> paramsList = new List<String>(){party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
             //get party that the food is being added to
             //don't really need to do this unless we want to throw specific errors (which we do for now)
             Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
