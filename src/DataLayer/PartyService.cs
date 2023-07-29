@@ -418,6 +418,50 @@ public class PartyService : IPartyService
         }
     }
 
+    public async Task<List<Guest>> GetAllGuestList(string party_code)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            var guestSelectStatement = "SELECT * FROM Guest WHERE party_code = @party_code;";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(guestSelectStatement, connection);
+            cmd.Parameters.AddWithValue("@party_code", party_code);
+
+            // Execute the command and return the object, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            List<Guest> returnedObj = new List<Guest>();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    Guest g = new Guest();
+                    g.guest_name = reader.GetString("guest_name");
+                    g.party_code = reader.GetString("party_code");
+                    g.at_party = reader.GetInt32("at_party");
+                    returnedObj.Add(g);
+                }
+            }
+            connection.Close();
+
+            //if the list of guests is not empty
+            if(returnedObj.Count() != 0)
+            {
+                return returnedObj;
+            }
+            else if (returnedObj.Count() == 0) //if it is, return null
+            {
+                return null;
+            }
+            else //something else went wrong, throw exception
+            {
+                throw new Exception("Something went wrong getting the guest list from db");
+            }
+        }
+    }
+
     public async Task<string> EndParty(string party_code)
     {
         using(var connection = await _connectionFactory.GetConnection())

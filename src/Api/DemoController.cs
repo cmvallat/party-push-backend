@@ -107,7 +107,8 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return StatusCode(200, new { message = result });
+                List<Guest> guest_list = await _mediator.Send(new CurrentGuestsQuery.Query() {Party_code = party_code});
+                return StatusCode(200, new { message = guest_list });
             }
 
             return StatusCode(500, new { message = result });
@@ -282,7 +283,8 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return StatusCode(200, new { message = result });
+                List<Guest> guest_list = await _mediator.Send(new CurrentGuestsQuery.Query() {Party_code = party_code});
+                return StatusCode(200, new { message = guest_list });
             }
 
             return StatusCode(500, new { message = "Failed to delete Guest from db" });
@@ -317,7 +319,43 @@ namespace Api.DemoController
                 }
                 else if(guest_list == null) //if it is empty, then there are no guests at that party
                 {
-                    //Todo: eventually move to handle on FE instead of exception!!!
+                    return StatusCode(200, new { guestList = new List<Guest>(){} });
+                }
+            }
+            
+            //hopefully this is unreachable
+            return StatusCode(500, new { message = "Something went wrong, failed to get Guest list from db" });
+        }
+
+        //Get the list of current guests at a particular party
+        [HttpGet("get-all-guest-list")]
+
+        public async Task<IActionResult> GetAllGuestListByCode(string party_code)
+        {   
+            List<String> paramsList = new List<String>(){party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
+            //get party that we are checking the guest list for
+            Models.Host corresponding_host = await _mediator.Send(new HostQuery.Query() {Party_code = party_code});
+
+            if(corresponding_host == null)
+            {
+                return StatusCode(500, new { message = "Could not get guest list, as that party does not exist" });
+            }
+            else
+            {
+                List<Guest> guest_list = await _mediator.Send(new AllGuestsQuery.Query() {Party_code = party_code});
+                
+                //if guest list is not empty, return the guest list
+                if(guest_list != null)
+                {
+                    return StatusCode(200, new { guestList = guest_list });
+                }
+                else if(guest_list == null) //if it is empty, then there are no guests at that party
+                {
                     return StatusCode(200, new { guestList = new List<Guest>(){} });
                 }
             }
@@ -395,7 +433,8 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return StatusCode(200, new { message = result });
+                List<Food> food_list = await _mediator.Send(new GetCurrentFoodListQuery.Query() {Party_code = party_code});
+                return StatusCode(200, new { message = food_list });
             }
 
             return StatusCode(500, new { message = "Failed to add food item for party in db" });
@@ -416,7 +455,8 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                return StatusCode(200, new { message = result });
+                List<Food> food_list = await _mediator.Send(new GetCurrentFoodListQuery.Query() {Party_code = party_code});
+                return StatusCode(200, new { message = food_list });
             }
 
             return StatusCode(500, new { message = "Failed to remove food item from party in db" });
