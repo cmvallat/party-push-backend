@@ -107,7 +107,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                List<Guest> guest_list = await _mediator.Send(new CurrentGuestsQuery.Query() {Party_code = party_code});
+                List<Guest> guest_list = await _mediator.Send(new AllGuestsQuery.Query() {Party_code = party_code});
                 return StatusCode(200, new { message = guest_list });
             }
 
@@ -283,7 +283,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                List<Guest> guest_list = await _mediator.Send(new CurrentGuestsQuery.Query() {Party_code = party_code});
+                List<Guest> guest_list = await _mediator.Send(new AllGuestsQuery.Query() {Party_code = party_code});
                 return StatusCode(200, new { message = guest_list });
             }
 
