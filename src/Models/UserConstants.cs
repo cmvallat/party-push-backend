@@ -5,6 +5,10 @@ namespace Models;
     {
         public static List<UserModel> Users = new()
             {
-                    new UserModel(){ Username="naeem",Password="naeem_admin",Role="Admin"}
+                    new UserModel(){
+                         Username="naeem",
+                         Password="naeem_admin",
+                         Role="Admin",
+                         party_code="568"}
             };
     }

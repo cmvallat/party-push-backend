@@ -44,7 +44,8 @@ namespace Api.LoginController
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier,user.Username),
-                new Claim(ClaimTypes.Role,user.Role)
+                new Claim(ClaimTypes.Role,user.Role),
+                new Claim(ClaimTypes.UserData,user.party_code)
             };
             var token = new JwtSecurityToken(
                 "https://localhost:5001/",

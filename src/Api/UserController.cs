@@ -19,7 +19,12 @@ namespace Api.UserController
         public IActionResult AdminEndPoint()
         {
             var currentUser = GetCurrentUser();
-            return Ok($"Hi {currentUser.Username} you are an {currentUser.Role}");
+            var party_code = "000";
+            if(currentUser.party_code == "567")
+            {
+                party_code = currentUser.party_code;
+            }
+            return Ok($"Hi {currentUser.Username} your party code is {party_code}");
         }
         private UserModel GetCurrentUser()
         {
@@ -30,7 +35,8 @@ namespace Api.UserController
                 return new UserModel
                 {
                     Username = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value,
-                    Role = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value
+                    Role = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value,
+                    party_code = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.UserData)?.Value
                 };
             }
             return null;
