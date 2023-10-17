@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Core.Queries;
+using Mediator;
 
 namespace Api.LoginController
 {
@@ -13,16 +15,18 @@ namespace Api.LoginController
     public class LoginController : ControllerBase
     {
         private readonly IConfiguration _config;
-        public LoginController(IConfiguration config)
+        private IMediator _mediator; 
+        public LoginController(IConfiguration config, IMediator mediator)
         {
             _config = config;
+            _mediator = mediator;
         }
 
         [AllowAnonymous]
         [HttpPost]
         public ActionResult Login([FromBody] UserLogin userLogin)
         {
-            var user = Authenticate(userLogin);
+            var user = Authenticate(userLogin).Result;
             if (user != null)
             {
                 var token = GenerateToken(user);
@@ -60,13 +64,23 @@ namespace Api.LoginController
         }
 
         //To authenticate user
-        private UserModel Authenticate(UserLogin userLogin)
+        private async Task<UserModel> Authenticate(UserLogin userLogin)
         {
-            var currentUser = UserConstants.Users.FirstOrDefault(x => x.Username.ToLower() ==
-                userLogin.Username.ToLower() && x.Password == userLogin.Password);
+            // var currentUser = UserConstants.Users.FirstOrDefault(
+            //     x => x.Username.ToLower() == userLogin.Username.ToLower() 
+            //     && x.Password == userLogin.Password);
+
+            var currentUser = await _mediator.Send(new GuestQuery.Query() {Guest_name = userLogin.Username, Party_code = userLogin.party_code});
+
             if (currentUser != null)
             {
-                return currentUser;
+                return new UserModel{
+                    Username = currentUser.guest_name,
+                    Role = "Admin",
+                    guest_name = currentUser.guest_name,
+                    party_code = currentUser.party_code,
+                    at_party = currentUser.at_party
+                };
             }
             return null;
         }
