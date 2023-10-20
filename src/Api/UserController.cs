@@ -13,18 +13,13 @@ namespace Api.UserController
     public class UserController : ControllerBase
     {
         //For admin Only
-        [HttpGet]
-        [Route("Admins")]
-        [Authorize(Roles = "Admin")]
+        [HttpGet("get-admins")]
+        // [Route("Admins")]
+        [Authorize(Roles = "Validated")]
         public IActionResult AdminEndPoint()
         {
             var currentUser = GetCurrentUser();
-            var party_code = "000";
-            if(currentUser.party_code == "567")
-            {
-                party_code = currentUser.party_code;
-            }
-            return Ok($"Hi {currentUser.Username} your party code is {party_code}");
+            return Ok($"Hi you are an {currentUser.Role}");
         }
         private UserModel GetCurrentUser()
         {
@@ -36,7 +31,6 @@ namespace Api.UserController
                 {
                     Username = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value,
                     Role = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value,
-                    party_code = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.UserData)?.Value
                 };
             }
             return null;

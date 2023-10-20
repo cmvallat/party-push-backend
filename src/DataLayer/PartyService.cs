@@ -462,6 +462,56 @@ public class PartyService : IPartyService
         }
     }
 
+    public async Task<User> GetUser(string username, string password, string phone_number)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            //Todo: include phone number in query??
+            var userSelectStatement = 
+            "SELECT * FROM Users WHERE username = @username " +
+            "AND password = @password LIMIT 1;";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(userSelectStatement, connection);
+            cmd.Parameters.AddWithValue("@username", username);
+            cmd.Parameters.AddWithValue("@password", password);
+            cmd.Parameters.AddWithValue("@phone_number", phone_number);
+
+            // Execute the command and return the object, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            List<User> returnedObj = new List<User>();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    User u = new User();
+                    u.username = reader.GetString("username");
+                    u.password = reader.GetString("password");
+                    u.phone_number = reader.GetString("phone_number");
+                    returnedObj.Add(u);
+                }
+            }
+            connection.Close();
+
+            //if the list of users is not empty
+            if(returnedObj.Count() != 0)
+            {
+                return returnedObj.First();
+            }
+            else if (returnedObj.Count() == 0) //if it is, return null
+            {
+                return null;
+            }
+            else //something else went wrong, throw exception
+            {
+                throw new Exception("Something went wrong getting the guest list from db");
+            }
+        }
+    }
+
+
     public async Task<string> EndParty(string party_code)
     {
         using(var connection = await _connectionFactory.GetConnection())

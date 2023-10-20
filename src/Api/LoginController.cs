@@ -23,8 +23,8 @@ namespace Api.LoginController
         }
 
         [AllowAnonymous]
-        [HttpPost]
-        public ActionResult Login([FromBody] UserLogin userLogin)
+        [HttpPost("get-JWT")]
+        public ActionResult GetJWT([FromBody] UserLogin userLogin)
         {
             var user = Authenticate(userLogin).Result;
             if (user != null)
@@ -49,7 +49,6 @@ namespace Api.LoginController
             {
                 new Claim(ClaimTypes.NameIdentifier,user.Username),
                 new Claim(ClaimTypes.Role,user.Role),
-                new Claim(ClaimTypes.UserData,user.party_code)
             };
             var token = new JwtSecurityToken(
                 "https://localhost:5001/",
@@ -70,16 +69,18 @@ namespace Api.LoginController
             //     x => x.Username.ToLower() == userLogin.Username.ToLower() 
             //     && x.Password == userLogin.Password);
 
-            var currentUser = await _mediator.Send(new GuestQuery.Query() {Guest_name = userLogin.Username, Party_code = userLogin.party_code});
+            var currentUser = await _mediator.Send(new UsersQuery.Query() {
+                    Username = userLogin.Username, 
+                    Password = userLogin.Password, 
+                    Phone_Number = userLogin.Phone_Number
+                });
 
             if (currentUser != null)
             {
-                return new UserModel{
-                    Username = currentUser.guest_name,
-                    Role = "Admin",
-                    guest_name = currentUser.guest_name,
-                    party_code = currentUser.party_code,
-                    at_party = currentUser.at_party
+                return new UserModel
+                {
+                    Username = currentUser.username,
+                    Role = "Validated",
                 };
             }
             return null;
