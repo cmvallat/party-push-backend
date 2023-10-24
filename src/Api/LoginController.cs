@@ -38,67 +38,67 @@ namespace Api.LoginController
             _mediator = mediator;
         }
 
-        [AllowAnonymous]
-        [HttpPost("login-user-and-get-JWT")]
-        public async Task<IActionResult> GetJWT([FromBody] UserLogin userLogin)
-        {
-            var user = Authenticate(userLogin).Result;
-            if (user != null)
-            {
-                var token = GenerateToken(user);
-                return StatusCode(200, new { message = token });
-            }
-            return StatusCode(404, new { message = "User not found" });
-        }
+        // [AllowAnonymous]
+        // [HttpPost("authenticate-user-and-get-JWT")]
+        // public async Task<IActionResult> GetJWT([FromBody] UserLogin userLogin)
+        // {
+        //     var user = Authenticate(userLogin).Result;
+        //     if (user != null)
+        //     {
+        //         var token = GenerateToken(user);
+        //         return StatusCode(200, new { message = token });
+        //     }
+        //     return StatusCode(404, new { message = "User not found" });
+        // }
 
-        // To generate token
-        private string GenerateToken(UserModel user)
-        {
-            var key = _config["Jwt:Key"];
-            var issuer = _config["Jwt:Issuer"];
-            var audience = _config["Jwt:Audience"];
+        // // To generate token
+        // private string GenerateToken(UserModel user)
+        // {
+        //     var key = _config["Jwt:Key"];
+        //     var issuer = _config["Jwt:Issuer"];
+        //     var audience = _config["Jwt:Audience"];
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("6xGrJLpenwmJXCIAlLPbdfbgctrbgvrtgcrtdbgvgrdffvxrsvfdfrcvftryr65gr4sdrger"));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier,user.Username),
-                new Claim(ClaimTypes.Role,user.Role),
-            };
-            var token = new JwtSecurityToken(
-                "https://localhost:5001/",
-                "https://localhost:5001/",
-                claims,
-                expires: DateTime.Now.AddMinutes(15),
-                signingCredentials: credentials);
+        //     var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("6xGrJLpenwmJXCIAlLPbdfbgctrbgvrtgcrtdbgvgrdffvxrsvfdfrcvftryr65gr4sdrger"));
+        //     var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        //     var claims = new[]
+        //     {
+        //         new Claim(ClaimTypes.NameIdentifier,user.Username),
+        //         new Claim(ClaimTypes.Role,user.Role),
+        //     };
+        //     var token = new JwtSecurityToken(
+        //         "https://localhost:5001/",
+        //         "https://localhost:5001/",
+        //         claims,
+        //         expires: DateTime.Now.AddMinutes(15),
+        //         signingCredentials: credentials);
 
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+        //     return new JwtSecurityTokenHandler().WriteToken(token);
 
-        }
+        // }
 
-        //To authenticate user
-        private async Task<UserModel> Authenticate(UserLogin userLogin)
-        {
-            // var currentUser = UserConstants.Users.FirstOrDefault(
-            //     x => x.Username.ToLower() == userLogin.Username.ToLower() 
-            //     && x.Password == userLogin.Password);
+        // //To authenticate user
+        // private async Task<UserModel> Authenticate(UserLogin userLogin)
+        // {
+        //     // var currentUser = UserConstants.Users.FirstOrDefault(
+        //     //     x => x.Username.ToLower() == userLogin.Username.ToLower() 
+        //     //     && x.Password == userLogin.Password);
 
-            var currentUser = await _mediator.Send(new UsersQuery.Query() {
-                    Username = userLogin.Username, 
-                    Password = userLogin.Password, 
-                });
+        //     var currentUser = await _mediator.Send(new UsersQuery.Query() {
+        //             Username = userLogin.Username, 
+        //             Password = userLogin.Password, 
+        //         });
 
-            if (currentUser != null)
-            {
-                return new UserModel
-                {
-                    Username = currentUser.username,
-                    Password = currentUser.password,
-                    Role = "Validated",
-                };
-            }
-            return null;
-        }
+        //     if (currentUser != null)
+        //     {
+        //         return new UserModel
+        //         {
+        //             Username = currentUser.username,
+        //             Password = currentUser.password,
+        //             Role = "Validated",
+        //         };
+        //     }
+        //     return null;
+        // }
     }
 }
