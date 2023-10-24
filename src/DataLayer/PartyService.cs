@@ -22,18 +22,19 @@ public class PartyService : IPartyService
 
     #region DB calls and methods for Check-In APIs
 
-    public async Task<Guest> GetGuest(string party_code, string guest_name)
+    public async Task<Guest> GetGuest(string party_code, string guest_name, string username)
     {
         using(var connection = await _connectionFactory.GetConnection())
         {
             // Create the SQL statements you want to execute
             // Todo: LIMIT-ing 1 right now; need to make party_code and guest_name UNIQUE in db so there is no other option
-            var guestSelectStatement = "SELECT * FROM Guest WHERE guest_name = @guest_name && party_code = @party_code LIMIT 1;";
+            var guestSelectStatement = "SELECT * FROM Guest WHERE guest_name = @guest_name && party_code = @party_code && username = @username LIMIT 1;";
 
             //parameterize the statement with values from the API
             MySqlCommand cmd = new MySqlCommand(guestSelectStatement, connection);
             cmd.Parameters.AddWithValue("@guest_name", guest_name);
             cmd.Parameters.AddWithValue("@party_code", party_code);
+            cmd.Parameters.AddWithValue("@username", username);
 
             // Execute the command and return the object, then close the connection
             // Todo: wrap in try block and handle errors in catch
@@ -44,6 +45,7 @@ public class PartyService : IPartyService
                 while (reader.Read())
                 {
                     //map response properties to returned object
+                    returnedObj.username = reader.GetString("username");
                     returnedObj.guest_name = reader.GetString("guest_name");
                     returnedObj.party_code = reader.GetString("party_code");
                     returnedObj.at_party = reader.GetInt32("at_party");

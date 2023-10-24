@@ -12,28 +12,27 @@ namespace Api.UserController
     [ApiController]
     public class UserController : ControllerBase
     {
-        //For admin Only
-        [HttpGet("get-admins")]
-        // [Route("Admins")]
-        [Authorize(Roles = "Validated")]
-        public IActionResult AdminEndPoint()
-        {
-            var currentUser = GetCurrentUser();
-            return Ok($"Hi {currentUser.Username} you are an {currentUser.Role}");
-        }
-        private UserModel GetCurrentUser()
-        {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            if (identity != null)
-            {
-                var userClaims = identity.Claims;
-                return new UserModel
-                {
-                    Username = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value,
-                    Role = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value,
-                };
-            }
-            return null;
-        }
+        // [HttpGet("validate-user")]
+        // // [Route("Admins")]
+        // [Authorize(Roles = "Validated")]
+        // public string AdminEndPoint()
+        // {
+        //     var currentUser = GetCurrentUser();
+        //     return currentUser.Username;
+        // }
+        // private UserModel GetCurrentUser()
+        // {
+        //     var identity = HttpContext.User.Identity as ClaimsIdentity;
+        //     if (identity != null)
+        //     {
+        //         var userClaims = identity.Claims;
+        //         return new UserModel
+        //         {
+        //             Username = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value,
+        //             Role = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value,
+        //         };
+        //     }
+        //     return null;
+        // }
     }
 }

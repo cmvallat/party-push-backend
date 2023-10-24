@@ -14,6 +14,9 @@ public class GuestQuery
 
         [Required]
         public string Guest_name { get; set; }
+
+        [Required]
+        public string Username { get; set; }
     }
 
     public class Handler : IRequestHandler<Query, Guest>
@@ -27,7 +30,7 @@ public class GuestQuery
 
         public async ValueTask<Guest> Handle(Query query, CancellationToken cancellationToken)
         {
-            return await _dbService.GetGuest(query.Party_code, query.Guest_name);
+            return await _dbService.GetGuest(query.Party_code, query.Guest_name, query.Username);
         }
     }
 }

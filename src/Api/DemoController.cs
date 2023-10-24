@@ -266,8 +266,8 @@ namespace Api.DemoController
             {
                 return StatusCode(500, new { message = "One or more parameters was missing" });
             }
-
-            var guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code});
+            var UN = AdminEndPoint();
+            var guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code, Username = UN});
 
             if(guest != null)
             {
@@ -707,6 +707,29 @@ namespace Api.DemoController
                     Username = currentUser.username,
                     Password = currentUser.password,
                     Role = "Validated",
+                };
+            }
+            return null;
+        }
+
+        [HttpGet("validate-user")]
+        // [Route("Admins")]
+        [Authorize(Roles = "Validated")]
+        public string AdminEndPoint()
+        {
+            var currentUser = GetCurrentUser();
+            return currentUser.Username;
+        }
+        private UserModel GetCurrentUser()
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            if (identity != null)
+            {
+                var userClaims = identity.Claims;
+                return new UserModel
+                {
+                    Username = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value,
+                    Role = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value,
                 };
             }
             return null;
