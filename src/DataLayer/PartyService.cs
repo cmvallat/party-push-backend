@@ -462,7 +462,7 @@ public class PartyService : IPartyService
         }
     }
 
-    public async Task<User> GetUser(string username, string password, string phone_number)
+    public async Task<User> GetUser(string username, string password)
     {
         using(var connection = await _connectionFactory.GetConnection())
         {
@@ -476,7 +476,6 @@ public class PartyService : IPartyService
             MySqlCommand cmd = new MySqlCommand(userSelectStatement, connection);
             cmd.Parameters.AddWithValue("@username", username);
             cmd.Parameters.AddWithValue("@password", password);
-            cmd.Parameters.AddWithValue("@phone_number", phone_number);
 
             // Execute the command and return the object, then close the connection
             // Todo: wrap in try block and handle errors in catch
@@ -511,6 +510,50 @@ public class PartyService : IPartyService
         }
     }
 
+    public async Task<string> AddUser(string username, string password, string phone_number)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            try
+            {
+                // Create the SQL statements you want to execute
+                var userInsertStatement = 
+                "INSERT INTO Users (username, password, phone_number) "
+                + "VALUES (@username, @password, @phone_number)";
+
+                //parameterize the statement with values from the API
+                MySqlCommand cmd = new MySqlCommand(userInsertStatement, connection);
+                cmd.Parameters.AddWithValue("@username", username);
+                cmd.Parameters.AddWithValue("@password", password);
+                cmd.Parameters.AddWithValue("@phone_number", phone_number);
+
+                // Execute the command and get the number of rows affected, then close the connection
+                // Todo: wrap in try block and handle errors in catch
+                int rowsAffected = cmd.ExecuteNonQuery();
+                connection.Close();
+                
+                //if something was added to the db, return success
+                if(rowsAffected != 0)
+                {
+                    return "Success!";
+                }
+                
+                //if nothing was added to the db, but not a SQL error, return generic error message
+                return "User was not added to the database.";
+            }
+            catch (MySqlException ex)
+            {
+                // Duplicate entry on unique constraint of guest_name and party_code
+                if (ex.Number == 1062)
+                {
+                    return "You already have a user with this username. Please add a new user.";
+                }
+
+                // Handle other SQL errors if needed
+                return "SQL exception: Failed to add user to the database with this username.";
+            }
+        }
+    }
 
     public async Task<string> EndParty(string party_code)
     {

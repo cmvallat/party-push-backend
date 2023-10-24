@@ -1,12 +1,28 @@
 using Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Core.Queries;
 using Mediator;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using Amazon;
+using Amazon.Runtime;
+using Amazon.RDSDataService;
+using Amazon.RDSDataService.Model;
+using Amazon.SecretsManager;
+using Amazon.SecretsManager.Model;
+using Microsoft.AspNetCore.Mvc;
+using MySql.Data.MySqlClient;
+using Core.Commands;
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
+using Common;
 
 namespace Api.LoginController
 {
@@ -23,17 +39,16 @@ namespace Api.LoginController
         }
 
         [AllowAnonymous]
-        [HttpPost("get-JWT")]
-        public ActionResult GetJWT([FromBody] UserLogin userLogin)
+        [HttpPost("login-user-and-get-JWT")]
+        public async Task<IActionResult> GetJWT([FromBody] UserLogin userLogin)
         {
             var user = Authenticate(userLogin).Result;
             if (user != null)
             {
                 var token = GenerateToken(user);
-                return Ok(token);
+                return StatusCode(200, new { message = token });
             }
-
-            return NotFound("user not found");
+            return StatusCode(404, new { message = "User not found" });
         }
 
         // To generate token
@@ -72,7 +87,6 @@ namespace Api.LoginController
             var currentUser = await _mediator.Send(new UsersQuery.Query() {
                     Username = userLogin.Username, 
                     Password = userLogin.Password, 
-                    Phone_Number = userLogin.Phone_Number
                 });
 
             if (currentUser != null)
@@ -80,6 +94,7 @@ namespace Api.LoginController
                 return new UserModel
                 {
                     Username = currentUser.username,
+                    Password = currentUser.password,
                     Role = "Validated",
                 };
             }

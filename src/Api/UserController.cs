@@ -19,7 +19,7 @@ namespace Api.UserController
         public IActionResult AdminEndPoint()
         {
             var currentUser = GetCurrentUser();
-            return Ok($"Hi you are an {currentUser.Role}");
+            return Ok($"Hi {currentUser.Username} you are an {currentUser.Role}");
         }
         private UserModel GetCurrentUser()
         {

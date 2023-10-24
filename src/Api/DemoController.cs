@@ -268,6 +268,36 @@ namespace Api.DemoController
             return StatusCode(500, new { message = "Failed to get Guest from db" });
         }
 
+        //Search for a particular user in database
+        [HttpGet("add-user")]
+
+        public async Task<IActionResult> AddUserWithUsernameAndPassword(string username, string password, string phone_number)
+        {
+            List<String> paramsList = new List<String>(){username, password, phone_number};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
+            var result = await _mediator.Send(new AddUser.Command() {Username = username, Password = password, Phone_Number = phone_number});
+
+            if(result == "Success!")
+            {
+                //Todo: return all users? or user object?
+                return StatusCode(200, new { message = result });
+            }
+
+            return StatusCode(500, new { message = result });
+
+
+            if(result != null)
+            {
+                return StatusCode(200, new { message = result });
+            }
+
+            return StatusCode(500, new { message = "Failed to add to db" });
+        }
+
         //Remove a guest permanently from the party (only host can do this)
         [HttpPost("delete-guest")]
 
