@@ -48,7 +48,6 @@ namespace Api.DemoController
         //Todo: add more validation? phone number validatio maybe?
         //Todo: potentially remove spotify_device_id if not needed or make non-required
         [HttpPost("create-party")] 
-
         public async Task<IActionResult> CreateParty(string Party_name, string Party_code, string Phone_number, string Spotify_device_id, int Invite_only, string Password)
         {
             List<String> paramsList = new List<String>(){Party_name, Party_code, Phone_number, Spotify_device_id, Password};
@@ -86,7 +85,6 @@ namespace Api.DemoController
         //includes logic for open and closed invite parties 
         //Todo: move logic to command
         [HttpPost("add-guest-from-host")]
-
         public async Task<IActionResult> AddGuestFromHost(int host_invite_only, string guest_name, string party_code)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
@@ -127,7 +125,6 @@ namespace Api.DemoController
         //includes logic for open and closed invite parties 
         //Todo: move logic to command
         [HttpPost("guest-check-in")]
-
         public async Task<IActionResult> CheckInGuest(string party_code, string guest_name)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
@@ -215,7 +212,6 @@ namespace Api.DemoController
         //Search for a particular party (Host) in database
         //Used only for internal purposes (other endpoints call it) so no need for password
         [HttpGet("get-host")]
-
         public async Task<IActionResult> GetHostByPartyCode(string party_code)
         {
             List<String> paramsList = new List<String>(){party_code};
@@ -237,7 +233,6 @@ namespace Api.DemoController
         //Search for a particular party (Host) in database
         //Used for the host login page (hence needing the password)
         [HttpGet("get-host-from-check-in")]
-
         public async Task<IActionResult> GetHostFromCheckIn(string party_code, string phone_number, string password)
         {
             List<String> paramsList = new List<String>(){phone_number, party_code, password};
@@ -258,7 +253,6 @@ namespace Api.DemoController
 
         //Search for a particular guest at a particular party in database
         [HttpGet("get-guest")]
-
         public async Task<IActionResult> GetGuestByNameAndCode(string guest_name, string party_code)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
@@ -266,20 +260,30 @@ namespace Api.DemoController
             {
                 return StatusCode(500, new { message = "One or more parameters was missing" });
             }
-            var UN = AdminEndPoint();
-            var guest = await _mediator.Send(new GuestQuery.Query() {Guest_name = guest_name, Party_code = party_code, Username = UN});
 
-            if(guest != null)
+            var UN = GetValidatedUsername();
+            if(UN == null)
             {
-                return StatusCode(200, new { message = guest });
+                return StatusCode(500, new { message = "User could not be validated" });
             }
+            else
+            {
+                var guest = await _mediator.Send(new GuestQuery.Query() {
+                    Guest_name = guest_name, 
+                    Party_code = party_code, 
+                    Username = UN});
 
-            return StatusCode(500, new { message = "Failed to get Guest from db" });
+                if(guest != null)
+                {
+                    return StatusCode(200, new { message = guest });
+                }
+
+                return StatusCode(500, new { message = "Failed to get Guest from db" });
+            }
         }
 
         //Search for a particular user in database
         [HttpGet("add-user")]
-
         public async Task<IActionResult> AddUserWithUsernameAndPassword(string username, string password, string phone_number)
         {
             List<String> paramsList = new List<String>(){username, password, phone_number};
@@ -292,14 +296,7 @@ namespace Api.DemoController
 
             if(result == "Success!")
             {
-                //Todo: return all users? or user object?
-                var test = await GetJWT(new UserLogin{
-                    Username = username, 
-                    Password = password, 
-                    Phone_Number = phone_number
-                });
-                return test;
-                // return StatusCode(200, new { message = token.message });
+                return await GetJWT(username, password);
             }
 
             return StatusCode(500, new { message = result });
@@ -315,7 +312,6 @@ namespace Api.DemoController
 
         //Remove a guest permanently from the party (only host can do this)
         [HttpPost("delete-guest")]
-
         public async Task<IActionResult> DeleteGuestByNameAndCode(string guest_name, string party_code)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
@@ -337,7 +333,6 @@ namespace Api.DemoController
 
         //Get the list of current guests at a particular party
         [HttpGet("get-current-guest-list")]
-
         public async Task<IActionResult> GetCurrentGuestListByCode(string party_code)
         {   
             List<String> paramsList = new List<String>(){party_code};
@@ -374,7 +369,6 @@ namespace Api.DemoController
 
         //Get the list of current guests at a particular party
         [HttpGet("get-all-guest-list")]
-
         public async Task<IActionResult> GetAllGuestListByCode(string party_code)
         {   
             List<String> paramsList = new List<String>(){party_code};
@@ -412,7 +406,6 @@ namespace Api.DemoController
 
         //End party (delete all guests and Host by party_code)
         [HttpPost("end-party")]
-
         public async Task<IActionResult> EndParty(string party_code)
         {
             List<String> paramsList = new List<String>(){party_code};
@@ -434,7 +427,6 @@ namespace Api.DemoController
         //Guest leaves a party but can re-join later
         //Won't show up on current guest list
         [HttpPost("leave-party")]
-
         public async Task<IActionResult> GuestLeavesParty(string party_code, string guest_name)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
@@ -465,7 +457,6 @@ namespace Api.DemoController
 
         //Adds a new row in Food table in DB representing a food item
         [HttpPost("add-food-item-from-host")]
-
         public async Task<IActionResult> AddFoodItemFromHost(string party_code, string item_name)
         {
             List<String> paramsList = new List<String>(){item_name, party_code};
@@ -487,7 +478,6 @@ namespace Api.DemoController
 
         //Removes a row representing a food item from the Food table in DB
         [HttpPost("remove-food-item-from-host")]
-
         public async Task<IActionResult> RemoveFoodItemFromHost(string party_code, string item_name)
         {
             List<String> paramsList = new List<String>(){item_name, party_code};
@@ -510,7 +500,6 @@ namespace Api.DemoController
         //Updates the food status when a host changes status of an item and texts guests to inform them
         //Todo: add guest phone_number column and texting functionality
         [HttpPost("change-food-status-from-host")]
-
         public async Task<IActionResult> ChangeFoodStatusFromHost(string party_code, string status, string item_name)
         {
             List<String> paramsList = new List<String>(){item_name, party_code, status};
@@ -563,7 +552,6 @@ namespace Api.DemoController
         //Could re-use this endpoint and pass in "from host" value to determine whether to text host or guests
         //but that would be confusing to handle on front end
         [HttpPost("change-food-status-from-guest")]
-
         public async Task<IActionResult> ChangeFoodStatusFromGuest(string party_code, string status, string guest_name, string item_name)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code, status, item_name};
@@ -609,7 +597,6 @@ namespace Api.DemoController
 
         //Get current list of Food items at a certain party
         [HttpPost("get-current-food-list")]
-
         public async Task<IActionResult> GetCurrentFoodList(string party_code)
         {
             List<String> paramsList = new List<String>(){party_code};
@@ -649,21 +636,29 @@ namespace Api.DemoController
         #endregion
 
         #region User Authenication endpoints and methods
+
+        //generates a JSON Web Token (JWT) for an existing and authenticated user
         [AllowAnonymous]
         [HttpPost("get-user")]
-        public async Task<IActionResult> GetJWT([FromBody] UserLogin userLogin)
+        public async Task<IActionResult> GetJWT(string username, string password)
         {
-            var user = Authenticate(userLogin).Result;
-            if (user != null)
+            List<String> paramsList = new List<String>(){username, password};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
-                var token = GenerateToken(user);
+                return StatusCode(500, new { message = "One or more parameters was missing" });
+            }
+
+            var userModel = Authenticate(username, password).Result;
+            if (userModel != null)
+            {
+                var token = GenerateToken(userModel);
                 return StatusCode(200, new { message = token });
             }
             return StatusCode(404, new { message = "User not found" });
         }
 
-        // To generate token
-        private string GenerateToken(UserModel user)
+        //Generates the actual JWT
+        private string GenerateToken(UserModel userModel)
         {
             // var key = _config["Jwt:Key"];
             // var issuer = _config["Jwt:Issuer"];
@@ -673,8 +668,8 @@ namespace Api.DemoController
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier,user.Username),
-                new Claim(ClaimTypes.Role,user.Role),
+                new Claim(ClaimTypes.NameIdentifier, userModel.Username),
+                new Claim(ClaimTypes.Role, userModel.Role),
             };
             var token = new JwtSecurityToken(
                 "https://localhost:5001/",
@@ -683,21 +678,15 @@ namespace Api.DemoController
                 expires: DateTime.Now.AddMinutes(15),
                 signingCredentials: credentials);
 
-
             return new JwtSecurityTokenHandler().WriteToken(token);
-
         }
 
-        //To authenticate user
-        private async Task<UserModel> Authenticate(UserLogin userLogin)
+        //"Authenticates" user by getting from database and assigning "validated" role
+        private async Task<UserModel> Authenticate(string username, string password)
         {
-            // var currentUser = UserConstants.Users.FirstOrDefault(
-            //     x => x.Username.ToLower() == userLogin.Username.ToLower() 
-            //     && x.Password == userLogin.Password);
-
             var currentUser = await _mediator.Send(new UsersQuery.Query() {
-                    Username = userLogin.Username, 
-                    Password = userLogin.Password, 
+                    Username = username,
+                    Password = password,
                 });
 
             if (currentUser != null)
@@ -712,15 +701,15 @@ namespace Api.DemoController
             return null;
         }
 
+        //validates and returns the username of a validated User 
         [HttpGet("validate-user")]
-        // [Route("Admins")]
         [Authorize(Roles = "Validated")]
-        public string AdminEndPoint()
+        public string GetValidatedUsername()
         {
-            var currentUser = GetCurrentUser();
+            var currentUser = ValidateUser();
             return currentUser.Username;
         }
-        private UserModel GetCurrentUser()
+        private UserModel ValidateUser()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
