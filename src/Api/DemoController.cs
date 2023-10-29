@@ -35,7 +35,7 @@ namespace Api.DemoController
 
     public class DemoController : ControllerBase
     {
-        private IMediator _mediator; 
+        private IMediator _mediator;
 
         public DemoController(IMediator mediator)
         {
@@ -47,7 +47,7 @@ namespace Api.DemoController
         //Create a party (Host object)
         //Todo: add more validation? phone number validatio maybe?
         //Todo: potentially remove spotify_device_id if not needed or make non-required
-        [HttpPost("create-party")] 
+        [HttpPost("create-party")]
         public async Task<IActionResult> CreateParty(string Party_name, string Party_code, string Phone_number, string Spotify_device_id, int Invite_only, string Password)
         {
             List<String> paramsList = new List<String>(){Party_name, Party_code, Phone_number, Spotify_device_id, Password};
@@ -648,17 +648,17 @@ namespace Api.DemoController
                 return StatusCode(500, new { message = "One or more parameters was missing" });
             }
 
-            var userModel = Authenticate(username, password).Result;
-            if (userModel != null)
+            var ValidatedUser = Authenticate(username, password).Result;
+            if (ValidatedUser != null)
             {
-                var token = GenerateToken(userModel);
+                var token = GenerateToken(ValidatedUser);
                 return StatusCode(200, new { message = token });
             }
             return StatusCode(404, new { message = "User not found" });
         }
 
         //Generates the actual JWT
-        private string GenerateToken(UserModel userModel)
+        private string GenerateToken(ValidatedUser ValidatedUser)
         {
             // var key = _config["Jwt:Key"];
             // var issuer = _config["Jwt:Issuer"];
@@ -668,8 +668,8 @@ namespace Api.DemoController
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, userModel.Username),
-                new Claim(ClaimTypes.Role, userModel.Role),
+                new Claim(ClaimTypes.NameIdentifier, ValidatedUser.Username),
+                new Claim(ClaimTypes.Role, ValidatedUser.Role),
             };
             var token = new JwtSecurityToken(
                 "https://localhost:5001/",
@@ -682,7 +682,7 @@ namespace Api.DemoController
         }
 
         //"Authenticates" user by getting from database and assigning "validated" role
-        private async Task<UserModel> Authenticate(string username, string password)
+        private async Task<ValidatedUser> Authenticate(string username, string password)
         {
             var currentUser = await _mediator.Send(new UsersQuery.Query() {
                     Username = username,
@@ -691,7 +691,7 @@ namespace Api.DemoController
 
             if (currentUser != null)
             {
-                return new UserModel
+                return new ValidatedUser
                 {
                     Username = currentUser.username,
                     Password = currentUser.password,
@@ -709,13 +709,13 @@ namespace Api.DemoController
             var currentUser = ValidateUser();
             return currentUser.Username;
         }
-        private UserModel ValidateUser()
+        private ValidatedUser ValidateUser()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
                 var userClaims = identity.Claims;
-                return new UserModel
+                return new ValidatedUser
                 {
                     Username = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value,
                     Role = userClaims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value,
