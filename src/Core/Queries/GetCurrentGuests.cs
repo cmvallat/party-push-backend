@@ -5,15 +5,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Queries;
 
-public class GetCurrentFoodListQuery
+public class GetCurrentGuests
 {
-    public class Query : IRequest<List<Food>>
+    public class Query : IRequest<List<Guest>>
     {
         [Required]
         public string Party_code { get; set; }
     }
 
-    public class Handler : IRequestHandler<Query, List<Food>>
+    public class Handler : IRequestHandler<Query, List<Guest>>
     {
         private readonly IPartyService _dbService;
 
@@ -22,9 +22,9 @@ public class GetCurrentFoodListQuery
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
         }
 
-        public async ValueTask<List<Food>> Handle(Query query, CancellationToken cancellationToken)
+        public async ValueTask<List<Guest>> Handle(Query query, CancellationToken cancellationToken)
         {
-            return await _dbService.GetCurrentFoodList(query.Party_code);
+            return await _dbService.GetCurrentGuests(query.Party_code);
         }
     }
 }

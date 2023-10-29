@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Queries;
 
-public class HostQuery
+public class GetHost
 {
     public class Query : IRequest<Host>
     {

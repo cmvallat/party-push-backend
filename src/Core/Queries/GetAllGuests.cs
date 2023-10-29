@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Queries;
 
-public class AllGuestsQuery
+public class GetAllGuests
 {
     public class Query : IRequest<List<Guest>>
     {
@@ -24,7 +24,7 @@ public class AllGuestsQuery
 
         public async ValueTask<List<Guest>> Handle(Query query, CancellationToken cancellationToken)
         {
-            return await _dbService.GetAllGuestList(query.Party_code);
+            return await _dbService.GetAllGuests(query.Party_code);
         }
     }
 }

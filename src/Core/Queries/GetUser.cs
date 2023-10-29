@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Queries;
 
-public class UsersQuery
+public class GetUser
 {
     public class Query : IRequest<User>
     {

@@ -5,19 +5,21 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Queries;
 
-public class HostFromCheckInQuery
+public class GetGuest
 {
-    public class Query : IRequest<Host>
+    public class Query : IRequest<Guest>
     {
         [Required]
         public string Party_code { get; set; }
+
         [Required]
-        public string Phone_Number { get; set; }
+        public string Guest_name { get; set; }
+
         [Required]
-        public string Password { get; set; }
+        public string Username { get; set; }
     }
 
-    public class Handler : IRequestHandler<Query, Host>
+    public class Handler : IRequestHandler<Query, Guest>
     {
         private readonly IPartyService _dbService;
 
@@ -26,9 +28,9 @@ public class HostFromCheckInQuery
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
         }
 
-        public async ValueTask<Host> Handle(Query query, CancellationToken cancellationToken)
+        public async ValueTask<Guest> Handle(Query query, CancellationToken cancellationToken)
         {
-            return await _dbService.GetHostFromCheckIn(query.Party_code, query.Phone_Number, query.Password);
+            return await _dbService.GetGuest(query.Party_code, query.Guest_name, query.Username);
         }
     }
 }

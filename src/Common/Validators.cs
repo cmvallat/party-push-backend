@@ -1,6 +1,5 @@
 namespace Common.Validators
 {
-    //previously used for 
     public class Validators
     {
         //previously developed to validate API parameters but went with Required data annotation instead

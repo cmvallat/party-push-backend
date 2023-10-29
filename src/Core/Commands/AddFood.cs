@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Commands;
 
-public class RemoveFoodItem
+public class AddFood
 {
     public class Command : IRequest<string>
     {
@@ -26,7 +26,7 @@ public class RemoveFoodItem
 
         public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.RemoveFoodItem(request.Party_code, request.Item_name);
+            return await _dbService.AddFood(request.Party_code, request.Item_name);
         }
     }
 }
