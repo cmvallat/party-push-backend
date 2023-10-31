@@ -27,6 +27,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DataLayer;
+
 
 namespace Api.PartyController
 {
@@ -36,10 +38,14 @@ namespace Api.PartyController
     public class PartyController : ControllerBase
     {
         private IMediator _mediator;
+        //Todo: remove after testing
+        private IPartyService _dbService;
 
-        public PartyController(IMediator mediator)
+        public PartyController(IMediator mediator, IPartyService dbService)
         {
             _mediator = mediator;
+            //Todo: remove after testing
+            _dbService = dbService;
         }
 
         //Refactor notes:
@@ -52,19 +58,19 @@ namespace Api.PartyController
         //Todo: potentially remove spotify_device_id if not needed or make non-required
         [HttpPost("add-host")]
         public async Task<IActionResult> AddHost(
+            string Username,
             string Party_name, 
             string Party_code, 
             string Phone_number, 
             string Spotify_device_id, 
-            int Invite_only, 
-            string Password)
+            int Invite_only)
         {
             List<String> paramsList = new List<String>(){
+                Username,
                 Party_name, 
                 Party_code, 
                 Phone_number, 
                 Spotify_device_id, 
-                Password
             };
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
@@ -74,12 +80,12 @@ namespace Api.PartyController
             //create the Host that we want to upsert
             Models.Host host = new Models.Host
             {
+                username = Username,
                 party_name = Party_name,
                 party_code = Party_code,
                 phone_number = Phone_number,
                 spotify_device_id = Spotify_device_id,
-                invite_only = Invite_only,
-                password = Password
+                invite_only = Invite_only
             };
 
             string result = await _mediator.Send(new AddHost.Command { Host = host });
@@ -410,26 +416,6 @@ namespace Api.PartyController
             return StatusCode(500, new { message = "Failed to delete Guest from db" });
         }
 
-        //End party (delete all guests and Host by party_code)
-        [HttpPost("end-party")]
-        public async Task<IActionResult> EndParty(string party_code)
-        {
-            List<String> paramsList = new List<String>(){party_code};
-            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
-            {
-                return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
-            }
-
-           var result = await _mediator.Send(new EndParty.Command { Party_code = party_code });
-
-            if(result == "Success!")
-            {
-                return StatusCode(200, new { message = result });
-            }
-
-            return StatusCode(500, new { message = "Failed to get delete party from db" });
-        }
-
         //Guest leaves a party but can re-join later
         //Won't show up on current guest list
         [HttpPost("leave-party")]
@@ -456,7 +442,49 @@ namespace Api.PartyController
 
             return StatusCode(500, new { message = "Failed to remove guest from party in db" });
         }
+        #endregion
 
+        #region Both Host and Guest Endpoints
+
+        //Search for all the Host and Guest objects in database with particular username
+        [HttpGet("get-party-objects")]
+        public async Task<IActionResult> GetPartyObjects(string username)
+        {
+            List<String> paramsList = new List<String>(){username};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
+            }
+
+            var result = await _mediator.Send(new GetPartyObjects.Query { Username = username });
+
+            if(result != null)
+            {
+                return StatusCode(200, new { message = result });
+            }
+
+            return StatusCode(500, new { message = "Failed to get Host and Guest objects from db" });
+        }
+
+        //End party (delete all guests and Host by party_code)
+        [HttpPost("end-party")]
+        public async Task<IActionResult> EndParty(string party_code)
+        {
+            List<String> paramsList = new List<String>(){party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
+            }
+
+           var result = await _mediator.Send(new EndParty.Command { Party_code = party_code });
+
+            if(result == "Success!")
+            {
+                return StatusCode(200, new { message = result });
+            }
+
+            return StatusCode(500, new { message = "Failed to get delete party from db" });
+        }
         #endregion
 
         #region Food APIs

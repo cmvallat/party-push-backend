@@ -8,11 +8,13 @@ public interface IPartyService
     Task<string> AddHost(Host host);
     Task<Host> GetHost(string party_code);
     Task<Host> GetHostFromCheckIn(string party_code, string phone_numner, string password);
+    Task<List<Host>> GetHostsFromUser(string username);
 
     //Guest functions
     Task<string> AddGuestFromHost(string guest_name, string party_code);
     Task<string> AddGuestFromCheckIn(Guest guest);
     Task<Guest> GetGuest(string party_code, string guest_name, string username);
+    Task<List<Guest>> GetGuestsFromUser(string username);
     Task<List<Guest>> GetCurrentGuests(string party_code);
     Task<List<Guest>> GetAllGuests(string party_code);
     //used to change at_party status (at check-in time AND guest leaving party)

@@ -25,22 +25,22 @@ public class PartyService : IPartyService
         string phone_number = host.phone_number;
         string spotify_device_id = host.spotify_device_id;
         int invite_only = host.invite_only;
-        string password = host.password;
+        string username = host.username;
 
         using(var connection = await _connectionFactory.GetConnection())
         {
             try{
             // Create the SQL statements you want to execute
-            var hostUpsertStatement = "INSERT INTO Host (party_name, party_code, phone_number, spotify_device_id, invite_only, password) VALUES (@party_name, @party_code, @phone_number, @spotify_device_id, @invite_only, @password)";
+            var hostUpsertStatement = "INSERT INTO Host (username, party_name, party_code, phone_number, spotify_device_id, invite_only) VALUES (@username, @party_name, @party_code, @phone_number, @spotify_device_id, @invite_only)";
 
             //parameterize the statement with values from the API
             MySqlCommand cmd = new MySqlCommand(hostUpsertStatement, connection);
+            cmd.Parameters.AddWithValue("@username", username);
             cmd.Parameters.AddWithValue("@party_name", party_name);
             cmd.Parameters.AddWithValue("@party_code", party_code);
             cmd.Parameters.AddWithValue("@phone_number", phone_number);
             cmd.Parameters.AddWithValue("@spotify_device_id", spotify_device_id);
             cmd.Parameters.AddWithValue("@invite_only", invite_only);
-            cmd.Parameters.AddWithValue("@password", password);
 
             // Execute the command and get the number of rows affected, then close the connection
             // Todo: wrap in try block and handle errors in catch
@@ -91,12 +91,12 @@ public class PartyService : IPartyService
                 while (reader.Read())
                 {
                     //map response properties to returned object
+                    returnedObj.username = reader.GetString("username");
                     returnedObj.party_name = reader.GetString("party_name");
                     returnedObj.party_code = reader.GetString("party_code");
                     returnedObj.phone_number = reader.GetString("phone_number");
                     returnedObj.spotify_device_id = reader.GetString("spotify_device_id");
                     returnedObj.invite_only = reader.GetInt32("invite_only");
-                    returnedObj.password = reader.GetString("password");
                 }
             }
             connection.Close();
@@ -110,19 +110,20 @@ public class PartyService : IPartyService
         }
     }
 
-    public async Task<Host> GetHostFromCheckIn(string party_code, string phone_number, string password)
+    //Todo: delete after confirming with Nick that we don't need it
+    public async Task<Host> GetHostFromCheckIn(string party_code, string phone_number, string username)
     {
         using(var connection = await _connectionFactory.GetConnection())
         {
             // Create the SQL statements you want to execute
             // party_code is a primary key and thus unique constraint in db
-            var hostSelectStatement = "SELECT * FROM Host WHERE party_code = @party_code AND phone_number = @phone_number AND password = @password";
+            var hostSelectStatement = "SELECT * FROM Host WHERE party_code = @party_code AND phone_number = @phone_number AND username = @username";
 
             //parameterize the statement with values from the API
             MySqlCommand cmd = new MySqlCommand(hostSelectStatement, connection);
             cmd.Parameters.AddWithValue("@party_code", party_code);
             cmd.Parameters.AddWithValue("@phone_number", phone_number);
-            cmd.Parameters.AddWithValue("@password", password);
+            cmd.Parameters.AddWithValue("@username", username);
 
             // Execute the command and return the object, then close the connection
             // Todo: wrap in try block and handle errors in catch
@@ -133,22 +134,57 @@ public class PartyService : IPartyService
                 while (reader.Read())
                 {
                     //map response properties to returned object
+                    returnedObj.username = reader.GetString("username");
                     returnedObj.party_name = reader.GetString("party_name");
                     returnedObj.party_code = reader.GetString("party_code");
                     returnedObj.phone_number = reader.GetString("phone_number");
                     returnedObj.spotify_device_id = reader.GetString("spotify_device_id");
                     returnedObj.invite_only = reader.GetInt32("invite_only");
-                    returnedObj.password = reader.GetString("password");
                 }
             }
             connection.Close();
 
             //de facto way to tell if our object is null - if primary keys are null
-            if(returnedObj.party_code == null)
+            if(returnedObj.party_code == null || returnedObj.username == null)
             {
                 return null;
             }
             return returnedObj;
+        }
+    }
+
+    public async Task<List<Host>> GetHostsFromUser(string username)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            var hostSelectStatement = "SELECT * FROM Host WHERE username = @username";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(hostSelectStatement, connection);
+            cmd.Parameters.AddWithValue("@username", username);
+
+            // Execute the command and return the object, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            List<Models.Host> returnedHostList = new List<Models.Host>();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    returnedHostList.Add(new Host(){
+                        username = reader.GetString("username"),
+                        party_name = reader.GetString("party_name"),
+                        party_code = reader.GetString("party_code"),
+                        phone_number = reader.GetString("phone_number"),
+                        spotify_device_id = reader.GetString("spotify_device_id"),
+                        invite_only = reader.GetInt32("invite_only")
+                    });
+                }
+            }
+            connection.Close();
+
+            return returnedHostList;
         }
     }
     #endregion
@@ -290,6 +326,39 @@ public class PartyService : IPartyService
                 return null;
             }
             return returnedObj;
+        }
+    }
+
+    public async Task<List<Guest>> GetGuestsFromUser(string username)
+    {
+        using(var connection = await _connectionFactory.GetConnection())
+        {
+            // Create the SQL statements you want to execute
+            var hostSelectStatement = "SELECT * FROM Guest WHERE username = @username";
+
+            //parameterize the statement with values from the API
+            MySqlCommand cmd = new MySqlCommand(hostSelectStatement, connection);
+            cmd.Parameters.AddWithValue("@username", username);
+
+            // Execute the command and return the object, then close the connection
+            // Todo: wrap in try block and handle errors in catch
+            List<Models.Guest> returnedGuestList = new List<Models.Guest>();
+
+            using (MySqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    returnedGuestList.Add(new Guest(){
+                        username = reader.GetString("username"),
+                        guest_name = reader.GetString("guest_name"),
+                        party_code = reader.GetString("party_code"),
+                        at_party = reader.GetInt32("at_party")
+                    });
+                }
+            }
+            connection.Close();
+
+            return returnedGuestList;
         }
     }
 
@@ -468,6 +537,7 @@ public class PartyService : IPartyService
         {
             int guestRowsAffected = 0;
             int hostRowsAffected = 0;
+            int foodRowsAffected = 0;
             // Create the SQL statements you want to execute
 
             //remember!!! party_code is a foreign key, so the guest needs to be at an existing party
@@ -478,12 +548,15 @@ public class PartyService : IPartyService
             //Todo: add Food here
             var guestDeleteStatement = "DELETE FROM Guest WHERE party_code = @party_code;";
             var hostDeleteStatement = "DELETE FROM Host WHERE party_code = @party_code";
+            var foodDeleteStatement = "DELETE FROM Food WHERE party_code = @party_code";
 
             //parameterize the statement with values from the API
             MySqlCommand guest_cmd = new MySqlCommand(guestDeleteStatement, connection);
             MySqlCommand host_cmd = new MySqlCommand(hostDeleteStatement, connection);
+            MySqlCommand food_cmd = new MySqlCommand(foodDeleteStatement, connection);
             guest_cmd.Parameters.AddWithValue("@party_code", party_code);
             host_cmd.Parameters.AddWithValue("@party_code", party_code);
+            food_cmd.Parameters.AddWithValue("@party_code", party_code);
 
             // Execute the command and get the number of rows affected, then close the connection
             try
@@ -494,9 +567,17 @@ public class PartyService : IPartyService
             {
                 return "Something went wrong with deleting the guests at this party";
             }
-            //have to delete all the guests before the host
-            //otherwise, the foreign key party_code used in Guest 
-            //will create an error
+
+            try
+            {
+                foodRowsAffected = food_cmd.ExecuteNonQuery();
+            }
+            catch
+            {
+                return "Something went wrong with deleting the food items for this party";
+            }
+            //have to delete all the guests and food before the host
+            //otherwise, the foreign key party_code used in Guest and Food will create an error
             try
             {
                 hostRowsAffected = host_cmd.ExecuteNonQuery();
