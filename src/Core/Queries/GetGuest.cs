@@ -9,13 +9,8 @@ public class GetGuest
 {
     public class Query : IRequest<Guest>
     {
-        [Required]
         public string Party_code { get; set; }
-
-        [Required]
         public string Guest_name { get; set; }
-
-        [Required]
         public string Username { get; set; }
     }
 

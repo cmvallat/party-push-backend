@@ -9,9 +9,7 @@ public class DeleteFood
 {
     public class Command : IRequest<string>
     {
-        [Required]
         public string Item_name { get; set; }
-        [Required]
         public string Party_code { get; set; }
     }
 

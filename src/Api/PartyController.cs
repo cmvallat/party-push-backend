@@ -125,7 +125,7 @@ namespace Api.PartyController
 
         //Search for a particular party (Host) in database
         //Used for the host login page (hence needing the password)
-        [HttpGet("get-host-from-check-in")]
+        [HttpGet("get-host-from-check-in-REMOVE-THIS")]
         public async Task<IActionResult> GetHostFromCheckIn(
             string party_code, 
             string phone_number, 
@@ -165,10 +165,11 @@ namespace Api.PartyController
         public async Task<IActionResult> AddGuestFromHost(
             int host_invite_only, 
             string guest_name, 
-            string party_code)
+            string party_code,
+            string username)
         {
             //Todo: need to remove host_invite_only? figure out what is needed here
-            List<String> paramsList = new List<String>(){guest_name, party_code};
+            List<String> paramsList = new List<String>(){guest_name, party_code, username};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
@@ -187,7 +188,10 @@ namespace Api.PartyController
             //if private party, add guest to invite list
             else if(host_invite_only == 1)
             {
-                result = await _mediator.Send(new AddGuestFromHost.Command { Guest_name = guest_name, Party_code = party_code });
+                result = await _mediator.Send(new AddGuestFromHost.Command{ 
+                    Guest_name = guest_name, 
+                    Party_code = party_code, 
+                    Username = username });
             }
             
             else //hopefully unreachable code, this would mean something is wrong on the front end
@@ -205,9 +209,12 @@ namespace Api.PartyController
         }
 
         //Adding a guest to a party from the guest check-in flow
-        //includes logic for open and closed invite parties 
+        //includes logic for open and closed invite parties
         [HttpPost("add-guest-from-check-in")]
-        public async Task<IActionResult> AddGuestFromCheckIn(string party_code, string guest_name)
+        public async Task<IActionResult> AddGuestFromCheckIn(
+            string party_code, 
+            string guest_name, 
+            string user_name)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
@@ -229,14 +236,20 @@ namespace Api.PartyController
            if(corresponding_host.invite_only == 0) //if party exists and is open to the public
            {
                 //get guest and see if they are currently at that party
-                var invited_guest = await _mediator.Send(new GetGuest.Query() {Guest_name = guest_name, Party_code = party_code});
+                var invited_guest = await _mediator.Send(new GetGuest.Query(){
+                    Guest_name = guest_name, 
+                    Party_code = party_code,
+                    Username = user_name
+                });
 
-                //if they are not, let them in
+                //if they are not at the party, let them in
                 //for guests who have never joined (null) and joined previously but left (exist but at_party = 0)
                 if(invited_guest == null || invited_guest.at_party == 0)
                 {
                     Guest matching_guest = new Guest
                     {
+                        //Todo: make consistent capitalization and casing
+                        username = user_name,
                         guest_name = guest_name,
                         party_code = party_code,
                         at_party = 1
@@ -254,7 +267,13 @@ namespace Api.PartyController
            else if (corresponding_host.invite_only == 1) //otherwise, it is invite only and we have to check if they are invited
            {
                 //query to check if they are invited
-                var invited_guest = await _mediator.Send(new GetGuest.Query() {Guest_name = guest_name, Party_code = party_code});
+                //with authentication
+                var UN = GetValidatedUsername();
+                var invited_guest = await _mediator.Send(new GetGuest.Query(){
+                    Guest_name = guest_name, 
+                    Party_code = party_code,
+                    Username = UN
+                });
 
                 if(invited_guest != null) //if we found a record, that means they are invited
                 {
@@ -262,6 +281,7 @@ namespace Api.PartyController
                     {
                         Guest new_guest_details = new Guest
                         {
+                            username = user_name,
                             guest_name = invited_guest.guest_name,
                             party_code = invited_guest.party_code,
                             at_party = 1
@@ -378,16 +398,7 @@ namespace Api.PartyController
             else
             {
                 List<Guest> guest_list = await _mediator.Send(new GetAllGuests.Query() {Party_code = party_code});
-                
-                //if guest list is not empty, return the guest list
-                if(guest_list != null)
-                {
-                    return StatusCode(200, new { guestList = guest_list });
-                }
-                else if(guest_list == null) //if it is empty, then there are no guests at that party
-                {
-                    return StatusCode(200, new { guestList = new List<Guest>(){} });
-                }
+                return StatusCode(200, new { guestList = guest_list });
             }
             
             //hopefully this is unreachable
@@ -397,15 +408,15 @@ namespace Api.PartyController
 
         //Remove a guest permanently from the party (only host can do this)
         [HttpPost("delete-guest")]
-        public async Task<IActionResult> DeleteGuest(string guest_name, string party_code)
+        public async Task<IActionResult> DeleteGuest(string username, string guest_name, string party_code)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
-
-            var result = await _mediator.Send(new DeleteGuest.Command() {Party_code = party_code, Guest_name = guest_name});
+            
+            var result = await _mediator.Send(new DeleteGuest.Command() {Party_code = party_code, Guest_name = guest_name, Username = username});
 
             if(result == "Success!")
             {
@@ -419,9 +430,9 @@ namespace Api.PartyController
         //Guest leaves a party but can re-join later
         //Won't show up on current guest list
         [HttpPost("leave-party")]
-        public async Task<IActionResult> GuestLeavesParty(string party_code, string guest_name)
+        public async Task<IActionResult> GuestLeavesParty(string party_code, string guest_name, string user_name)
         {
-            List<String> paramsList = new List<String>(){guest_name, party_code};
+            List<String> paramsList = new List<String>(){guest_name, party_code, user_name};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
@@ -429,6 +440,7 @@ namespace Api.PartyController
 
             Guest new_guest_details = new Guest
             {
+                username = user_name,
                 guest_name = guest_name,
                 party_code = party_code,
                 at_party = 0

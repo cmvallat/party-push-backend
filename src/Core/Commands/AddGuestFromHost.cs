@@ -9,10 +9,9 @@ public class AddGuestFromHost
 {
     public class Command : IRequest<string>
     {
-        [Required]
         public string Guest_name { get; set; }
-        [Required]
         public string Party_code { get; set; }
+        public string Username { get; set; }
     }
 
     public class Handler : IRequestHandler<Command, string>
@@ -26,7 +25,7 @@ public class AddGuestFromHost
 
         public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.AddGuestFromHost(request.Guest_name, request.Party_code);
+            return await _dbService.AddGuestFromHost(request.Guest_name, request.Party_code, request.Username);
         }
     }
 }

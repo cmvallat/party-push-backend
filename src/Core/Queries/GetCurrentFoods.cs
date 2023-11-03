@@ -9,7 +9,6 @@ public class GetCurrentFoods
 {
     public class Query : IRequest<List<Food>>
     {
-        [Required]
         public string Party_code { get; set; }
     }
 

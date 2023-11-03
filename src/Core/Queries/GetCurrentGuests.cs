@@ -9,7 +9,6 @@ public class GetCurrentGuests
 {
     public class Query : IRequest<List<Guest>>
     {
-        [Required]
         public string Party_code { get; set; }
     }
 

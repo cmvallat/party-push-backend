@@ -9,7 +9,6 @@ public class AddHost
 {
     public class Command : IRequest<string>
     {
-        [Required]
         public Host Host { get; set; }
     }
 

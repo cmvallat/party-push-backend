@@ -9,11 +9,8 @@ public class GetHostFromCheckIn
 {
     public class Query : IRequest<Host>
     {
-        [Required]
         public string Party_code { get; set; }
-        [Required]
         public string Phone_Number { get; set; }
-        [Required]
         public string Password { get; set; }
     }
 

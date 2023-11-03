@@ -9,10 +9,7 @@ public class GetUser
 {
     public class Query : IRequest<User>
     {
-        [Required]
         public string Username { get; set; }
-
-        [Required]
         public string Password { get; set; }
     }
 

@@ -9,7 +9,6 @@ public class GetPartyObjects
 {
     public class Query : IRequest<List<object>>
     {
-        [Required]
         public string Username{ get; set; }
     }
 

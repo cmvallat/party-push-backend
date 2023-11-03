@@ -190,11 +190,8 @@ public class PartyService : IPartyService
     #endregion
 
     #region Methods for Guest APIs
-    public async Task<string> AddGuestFromHost(string guest_name, string party_code)
+    public async Task<string> AddGuestFromHost(string guest_name, string party_code, string username)
     {
-        string guestName = guest_name;
-        string partyCode = party_code;
-
         using(var connection = await _connectionFactory.GetConnection())
         {
             try
@@ -202,12 +199,13 @@ public class PartyService : IPartyService
                 // Create the SQL statements you want to execute
                 //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
                 //meaning there needs to be an entry in Host with the same party_code
-                var guestInsertStatement = "INSERT INTO Guest (guest_name, party_code, at_party) VALUES (@guest_name, @party_code, 0)";
+                var guestInsertStatement = "INSERT INTO Guest (username, guest_name, party_code, at_party) VALUES (@username, @guest_name, @party_code, 0)";
 
                 //parameterize the statement with values from the API
                 MySqlCommand cmd = new MySqlCommand(guestInsertStatement, connection);
                 cmd.Parameters.AddWithValue("@guest_name", guest_name);
                 cmd.Parameters.AddWithValue("@party_code", party_code);
+                cmd.Parameters.AddWithValue("@username", username);
 
                 // Execute the command and get the number of rows affected, then close the connection
                 // Todo: wrap in try block and handle errors in catch
@@ -381,11 +379,12 @@ public class PartyService : IPartyService
             {
                 while (reader.Read())
                 {
-                    Guest g = new Guest();
-                    g.guest_name = reader.GetString("guest_name");
-                    g.party_code = reader.GetString("party_code");
-                    g.at_party = reader.GetInt32("at_party");
-                    returnedObj.Add(g);
+                    returnedObj.Add(new Guest(){
+                        username = reader.GetString("username"),
+                        guest_name = reader.GetString("guest_name"),
+                        party_code = reader.GetString("party_code"),
+                        at_party = reader.GetInt32("at_party")
+                    });
                 }
             }
             connection.Close();
@@ -425,11 +424,12 @@ public class PartyService : IPartyService
             {
                 while (reader.Read())
                 {
-                    Guest g = new Guest();
-                    g.guest_name = reader.GetString("guest_name");
-                    g.party_code = reader.GetString("party_code");
-                    g.at_party = reader.GetInt32("at_party");
-                    returnedObj.Add(g);
+                    returnedObj.Add(new Guest(){
+                        username = reader.GetString("username"),
+                        guest_name = reader.GetString("guest_name"),
+                        party_code = reader.GetString("party_code"),
+                        at_party = reader.GetInt32("at_party")
+                    });
                 }
             }
             connection.Close();
@@ -455,6 +455,7 @@ public class PartyService : IPartyService
         string guest_name = guest.guest_name;
         string party_code = guest.party_code;
         int at_party = guest.at_party;
+        string username = guest.username;
 
         using(var connection = await _connectionFactory.GetConnection())
         {
@@ -463,11 +464,11 @@ public class PartyService : IPartyService
                 // Create the SQL statements you want to execute
                 //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
                 //meaning there needs to be an entry in Host with the same party_code
-                var guestUpdateStatement = "UPDATE Guest SET at_party = @at_party WHERE guest_name = @guest_name AND party_code = @party_code";
+                var guestUpdateStatement = "UPDATE Guest SET at_party = @at_party WHERE username = @username AND party_code = @party_code";
 
                 //parameterize the statement with values from the API
                 MySqlCommand cmd = new MySqlCommand(guestUpdateStatement, connection);
-                cmd.Parameters.AddWithValue("@guest_name", guest_name);
+                cmd.Parameters.AddWithValue("@username", username);
                 cmd.Parameters.AddWithValue("@party_code", party_code);
                 cmd.Parameters.AddWithValue("@at_party", at_party);
 
@@ -493,12 +494,10 @@ public class PartyService : IPartyService
         }
     }
 
-    public async Task<string> DeleteGuest(string Party_code, string Guest_name)
+    public async Task<string> DeleteGuest(string Party_code, string Guest_name, string Username)
     {
         //doesn't matter if they are at the party currently or not, we are deleting them forever
         //so we don't need at_party
-        string party_code = Party_code;
-        string guest_name = Guest_name;
 
         using(var connection = await _connectionFactory.GetConnection())
         {
@@ -508,12 +507,13 @@ public class PartyService : IPartyService
 
             //MAKE SURE SQL_SAFE_UPDATES = 0 IN ORDER TO BE ABLE TO DELETE
             //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 0;
-            var guestDeleteStatement = "DELETE FROM Guest WHERE guest_name = @guest_name AND party_code = @party_code";
+            var guestDeleteStatement = "DELETE FROM Guest WHERE guest_name = @Guest_name AND party_code = @Party_code AND username = Username";
 
             //parameterize the statement with values from the API
             MySqlCommand cmd = new MySqlCommand(guestDeleteStatement, connection);
-            cmd.Parameters.AddWithValue("@guest_name", guest_name);
-            cmd.Parameters.AddWithValue("@party_code", party_code);
+            cmd.Parameters.AddWithValue("@guest_name", Guest_name);
+            cmd.Parameters.AddWithValue("@party_code", Party_code);
+            cmd.Parameters.AddWithValue("@username", Username);
 
             // Execute the command and get the number of rows affected, then close the connection
             // Todo: wrap in try block and handle errors in catch
@@ -630,7 +630,7 @@ public class PartyService : IPartyService
             {
                 return "Success!";
             }
-            
+
             //if nothing was added to the db, return error
             return "Could not add food item to the database";
         }
@@ -675,7 +675,7 @@ public class PartyService : IPartyService
             }
             else //something else went wrong, throw exception
             {
-                throw new Exception("Something went wrong getting the guest list from db");
+                throw new Exception("Something went wrong getting the food list from db");
             }
         }
     }

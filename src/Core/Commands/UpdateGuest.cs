@@ -9,7 +9,6 @@ public class UpdateGuest
 {
     public class Command : IRequest<string>
     {
-        [Required]
         public Guest Guest { get; set; }
     }
 

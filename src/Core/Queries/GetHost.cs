@@ -9,7 +9,6 @@ public class GetHost
 {
     public class Query : IRequest<Host>
     {
-        [Required]
         public string Party_code { get; set; }
     }
 
