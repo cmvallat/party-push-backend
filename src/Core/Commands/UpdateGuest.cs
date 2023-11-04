@@ -9,9 +9,10 @@ public class UpdateGuest
 {
     public class Command : IRequest<string>
     {
-        public Guest Guest { get; set; }
+        public string Party_code { get; set; }
+        public int At_party { get; set; }
+        public string Username { get; set; }
     }
-
     public class Handler : IRequestHandler<Command, string>
     {
         private readonly IPartyService _dbService;
@@ -23,7 +24,7 @@ public class UpdateGuest
 
         public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.UpdateGuest(request.Guest);
+            return await _dbService.UpdateGuest(request.Party_code, request.At_party, request.Username);
         }
     }
 }

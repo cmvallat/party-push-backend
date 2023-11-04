@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Models\Models.csproj"/>
-    <!-- <ProjectReference Include="..\Core\Core.csproj" /> -->
+    <ProjectReference Include="..\Common\Common.csproj" />
   </ItemGroup>
 
 </Project>

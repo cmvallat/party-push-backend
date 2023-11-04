@@ -58,48 +58,49 @@ namespace Api.PartyController
         //Todo: potentially remove spotify_device_id if not needed or make non-required
         [HttpPost("add-host")]
         public async Task<IActionResult> AddHost(
-            string Username,
             string Party_name, 
             string Party_code, 
             string Phone_number, 
-            string Spotify_device_id, 
+            //string Spotify_device_id, 
             int Invite_only)
         {
             List<String> paramsList = new List<String>(){
-                Username,
                 Party_name, 
                 Party_code, 
                 Phone_number, 
-                Spotify_device_id, 
+                //Spotify_device_id, 
             };
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            //create the Host that we want to upsert
-            Models.Host host = new Models.Host
+            //make sure anyone trying to create a party is a validated user
+            var UN = GetValidatedUsername();
+            if(UN == null)
             {
-                username = Username,
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
+            }
+
+            string result = await _mediator.Send(new AddHost.Command {
+                username = UN,
                 party_name = Party_name,
                 party_code = Party_code,
                 phone_number = Phone_number,
-                spotify_device_id = Spotify_device_id,
-                invite_only = Invite_only
-            };
+                //spotify_device_id = Spotify_device_id,
+                invite_only = Invite_only 
+            });
 
-            string result = await _mediator.Send(new AddHost.Command { Host = host });
-
-            if(result == "Success!")
+            if(result == Common.Constants.Constants.SuccessMessage)
             {
                 //on creation, text Host to confirm
                 //functionality will be added later. commented out for now
+
                 // string message = "Your party, " + Party_name + ", was successfully created!";
                 // var returnedString = Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(Phone_number, message);
                 return StatusCode(200, new { message = result });
             }
-
-            return StatusCode(500, new { message = "Failed to insert Host into db" });
+            return StatusCode(500, new { message = result });
         }
 
         //Search for a particular party (Host) in database
@@ -141,18 +142,18 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            var host = await _mediator.Send(new GetHostFromCheckIn.Query(){
+            var result = await _mediator.Send(new GetHostFromCheckIn.Query(){
                 Party_code = party_code, 
                 Phone_Number = phone_number, 
                 Password = password
             });
 
-            if(host != null)
+            if(result != null)
             {
-                return StatusCode(200, new { message = host });
+                return StatusCode(200, new { message = result });
             }
 
-            return StatusCode(500, new { message = "Failed to get Host from db" });
+            return StatusCode(500, new { message = result });
         }
         #endregion
 
@@ -160,61 +161,54 @@ namespace Api.PartyController
 
         //Adding a guest to a party from the host invitation flow
         //includes logic for open and closed invite parties 
-        //Todo: move logic to command
         [HttpPost("add-guest-from-host")]
         public async Task<IActionResult> AddGuestFromHost(
-            int host_invite_only, 
-            string guest_name, 
-            string party_code,
-            string username)
+            int host_invite_only,
+            string guest_name,
+            string party_code)
         {
-            //Todo: need to remove host_invite_only? figure out what is needed here
-            List<String> paramsList = new List<String>(){guest_name, party_code, username};
+            List<String> paramsList = new List<String>(){guest_name, party_code};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
-
-            string result = "Success!";
-            
-            //determine whether the party is open invite
-            //Todo: perhaps handle on front end?
-            //if open to the public, no need to add a guest to an invite list
-            if(host_invite_only == 0)
+            //make sure that the user who is adding this guest to the invite list
+            //is the user who is on the host object
+            var UN = GetValidatedUsername();
+            if(UN == null)
             {
-                return StatusCode(200, new {message = "Your party is open invite, no need to add guests! Just give them your party_code and tell them to check-in"});
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
             }
+            var host = await _mediator.Send(new GetHost.Query{Party_code = party_code});
+            var result = Common.Constants.Constants.HostNotValidatedMessage;
 
-            //if private party, add guest to invite list
-            else if(host_invite_only == 1)
+            //if the user is the host of the party, let them add the guest
+            if(host.username == UN)
             {
                 result = await _mediator.Send(new AddGuestFromHost.Command{ 
                     Guest_name = guest_name, 
                     Party_code = party_code, 
-                    Username = username });
-            }
-            
-            else //hopefully unreachable code, this would mean something is wrong on the front end
-            {
-                return StatusCode(500, new { message = "Something went wrong with the invite_only parameter not being either 0 or 1." });
-            }
+                    Username = UN,
+                    Invite_only = host_invite_only 
+                });
 
-            if(result == "Success!")
-            {
-                List<Guest> guest_list = await _mediator.Send(new GetAllGuests.Query() {Party_code = party_code});
-                return StatusCode(200, new { message = guest_list });
+                if(result == Common.Constants.Constants.SuccessMessage)
+                {
+                    List<Guest> guest_list = await _mediator.Send(new GetAllGuests.Query() {Party_code = party_code});
+                    return StatusCode(200, new { message = guest_list });
+                }
             }
-
+            else
+            {
+                return StatusCode(500, new {message = Common.Constants.Constants.MismatchedPartyToUserMessage});
+            }
             return StatusCode(500, new { message = result });
         }
 
         //Adding a guest to a party from the guest check-in flow
         //includes logic for open and closed invite parties
         [HttpPost("add-guest-from-check-in")]
-        public async Task<IActionResult> AddGuestFromCheckIn(
-            string party_code, 
-            string guest_name, 
-            string user_name)
+        public async Task<IActionResult> AddGuestFromCheckIn(string party_code, string guest_name)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
@@ -222,93 +216,43 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            string result = "Success!";
+            //get the party that we are trying to add the guest to
+            Models.Host corresponding_host = await _mediator.Send(new GetHost.Query { Party_code = party_code });
 
-           //before we do anything, make sure the party exists
-           Models.Host corresponding_host = await _mediator.Send(new GetHost.Query { Party_code = party_code });
+            //validate the guest trying to join
+            var UN = GetValidatedUsername();
+            if(UN == null)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
+            }
+            var invited_guest = await _mediator.Send(new GetGuest.Query(){
+                Guest_name = guest_name, 
+                Party_code = party_code,
+                Username = UN
+            });
 
-           //if there is no party, throw error
-           if(corresponding_host == null)
-           {
-                return StatusCode(500, new { message = "Couldn't find a party with this party code." });
-           }
+            //add the guest
+            var result = await _mediator.Send(new AddGuestFromCheckIn.Command {
+                Host = corresponding_host,
+                Guest = invited_guest
+            });
 
-           if(corresponding_host.invite_only == 0) //if party exists and is open to the public
-           {
-                //get guest and see if they are currently at that party
-                var invited_guest = await _mediator.Send(new GetGuest.Query(){
-                    Guest_name = guest_name, 
-                    Party_code = party_code,
-                    Username = user_name
+            //if the command says we are good to update the guest, update it
+            if(result == Common.Constants.Constants.OkToUpdateGuestMessage)
+            {
+                result = await _mediator.Send(new UpdateGuest.Command{ 
+                    Party_code = invited_guest.party_code,
+                    At_party = 1,
+                    Username = invited_guest.username
                 });
-
-                //if they are not at the party, let them in
-                //for guests who have never joined (null) and joined previously but left (exist but at_party = 0)
-                if(invited_guest == null || invited_guest.at_party == 0)
-                {
-                    Guest matching_guest = new Guest
-                    {
-                        //Todo: make consistent capitalization and casing
-                        username = user_name,
-                        guest_name = guest_name,
-                        party_code = party_code,
-                        at_party = 1
-                    };
-                    result = await _mediator.Send(new AddGuestFromCheckIn.Command { Guest = matching_guest});
-                }
-
-                //if they are already at the party, don't let them in (duplicate) and throw error
-                else if(invited_guest.at_party == 1)
-                {
-                    return StatusCode(500, new { message = "There is already someone at this party with this name. Please try checking in again with a new name." });
-                }
-           }
-
-           else if (corresponding_host.invite_only == 1) //otherwise, it is invite only and we have to check if they are invited
-           {
-                //query to check if they are invited
-                //with authentication
-                var UN = GetValidatedUsername();
-                var invited_guest = await _mediator.Send(new GetGuest.Query(){
-                    Guest_name = guest_name, 
-                    Party_code = party_code,
-                    Username = UN
-                });
-
-                if(invited_guest != null) //if we found a record, that means they are invited
-                {
-                    if(invited_guest.at_party == 0) //if they aren't currently at the party, let them in
-                    {
-                        Guest new_guest_details = new Guest
-                        {
-                            username = user_name,
-                            guest_name = invited_guest.guest_name,
-                            party_code = invited_guest.party_code,
-                            at_party = 1
-                        };
-                        result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
-                    }
-                    else //if they are somehow at the party already (duplicate), throw error
-                    {
-                        return StatusCode(500, new { message = "There is already someone at this party with this name. Please try checking in again with a new name." });
-                    }
-                }
-                else //if they are not invited, throw error
-                {
-                    return StatusCode(500, new { message = "Oops, this is awkward! Doesn't seem like you're on the invite list. Please check that you spelled your name and the party code right, or try joining another party." });
-                }
-           }
-           else //hopefully unreachable code because this would mean something wrong with FE or invite_only (DB error)
-           {
-            return StatusCode(500, new { message = "Something went wrong with guest check in, invite_only being neither 0 or 1." });
-           }
-
-            if(result == "Success!")
+            }
+            //check if guest was let into the party (UpdateGuest returned success)
+            if(result == Common.Constants.Constants.SuccessMessage)
             {
                 return StatusCode(200, new { message = result });
             }
 
-            return StatusCode(500, new { message = "Something went wrong." });
+            return StatusCode(500, new { message = result });
         }
 
         //Search for a particular guest at a particular party in database
@@ -320,26 +264,23 @@ namespace Api.PartyController
             {
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
-
+            //make sure guest is validated with a username
             var UN = GetValidatedUsername();
             if(UN == null)
             {
-                return StatusCode(500, new { message = "User could not be validated" });
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
             }
-            else
+            var guest = await _mediator.Send(new GetGuest.Query() {
+                Guest_name = guest_name, 
+                Party_code = party_code, 
+                Username = UN});
+
+            if(guest != null)
             {
-                var guest = await _mediator.Send(new GetGuest.Query() {
-                    Guest_name = guest_name, 
-                    Party_code = party_code, 
-                    Username = UN});
-
-                if(guest != null)
-                {
-                    return StatusCode(200, new { message = guest });
-                }
-
-                return StatusCode(500, new { message = "Failed to get Guest from db" });
+                return StatusCode(200, new { message = guest });
             }
+
+            return StatusCode(500, new { message = "Failed to get Guest from db" });
         }
 
          //Get the list of current guests at a particular party
@@ -352,33 +293,32 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            //get party that we are checking the guest list for
-            Models.Host corresponding_host = await _mediator.Send(new GetHost.Query() {Party_code = party_code});
-
-            if(corresponding_host == null)
+            //validate the party that we are checking the guest list for exists
+            Models.Host host = await _mediator.Send(new GetHost.Query { Party_code = party_code });
+            if(host == null)
             {
-                return StatusCode(500, new { message = "Could not get guest list, as that party does not exist" });
+                return StatusCode(500, new { message = Common.Constants.Constants.HostDoesntExistForGuestMessage });
             }
+
             else
             {
                 List<Guest> guest_list = await _mediator.Send(new GetCurrentGuests.Query() {Party_code = party_code});
-                
                 //if guest list is not empty, return the guest list
                 if(guest_list != null)
                 {
-                    return StatusCode(200, new { guestList = guest_list });
+                    return StatusCode(200, new { message = guest_list });
                 }
-                else if(guest_list == null) //if it is empty, then there are no guests at that party
+                //if it is empty, then there are no guests at that party
+                else if(guest_list == null)
                 {
-                    return StatusCode(200, new { guestList = new List<Guest>(){} });
+                    return StatusCode(200, new { message = new List<Guest>(){} });
                 }
             }
-            
             //hopefully this is unreachable
-            return StatusCode(500, new { message = "Something went wrong, failed to get Guest list from db" });
+            return StatusCode(500, new { message = Common.Constants.Constants.CouldntGetGuestListMessage });
         }
 
-        //Get the list of current guests at a particular party
+        //Get the list of all guests at a particular party
         [HttpGet("get-all-guests")]
         public async Task<IActionResult> GetAllGuests(string party_code)
         {   
@@ -388,22 +328,28 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            //get party that we are checking the guest list for
-            Models.Host corresponding_host = await _mediator.Send(new GetHost.Query() {Party_code = party_code});
-
-            if(corresponding_host == null)
+            //validate the party that we are checking the guest list for exists
+            Models.Host host = await _mediator.Send(new GetHost.Query { Party_code = party_code });
+            if(host == null)
             {
-                return StatusCode(500, new { message = "Could not get guest list, as that party does not exist" });
+                return StatusCode(500, new { message = Common.Constants.Constants.HostDoesntExistForGuestMessage });
             }
             else
             {
                 List<Guest> guest_list = await _mediator.Send(new GetAllGuests.Query() {Party_code = party_code});
-                return StatusCode(200, new { guestList = guest_list });
+                //if guest list is not empty, return the guest list
+                if(guest_list != null)
+                {
+                    return StatusCode(200, new { message = guest_list });
+                }
+                //if it is empty, then there are no guests at that party
+                else if(guest_list == null)
+                {
+                    return StatusCode(200, new { message = new List<Guest>(){} });
+                }            
             }
-            
             //hopefully this is unreachable
-            return StatusCode(500, new { message = "Something went wrong, failed to get Guest list from db" });
-            
+            return StatusCode(500, new { message = Common.Constants.Constants.CouldntGetGuestListMessage });
         }
 
         //Remove a guest permanently from the party (only host can do this)
@@ -416,43 +362,56 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
             
+            //this username is not validated because its not the username of the host deleting
+            //but instead the username of the guest to delete
             var result = await _mediator.Send(new DeleteGuest.Command() {Party_code = party_code, Guest_name = guest_name, Username = username});
 
-            if(result == "Success!")
+            if(result == Common.Constants.Constants.SuccessMessage)
             {
                 List<Guest> guest_list = await _mediator.Send(new GetAllGuests.Query() {Party_code = party_code});
-                return StatusCode(200, new { message = guest_list });
+                //if guest list is not empty, return the guest list
+                if(guest_list != null)
+                {
+                    return StatusCode(200, new { message = guest_list });
+                }
+                else if(guest_list == null) //if it is empty, then there are no guests at that party
+                {
+                    return StatusCode(200, new { message = new List<Guest>(){} });
+                }              
             }
-
             return StatusCode(500, new { message = "Failed to delete Guest from db" });
         }
 
         //Guest leaves a party but can re-join later
         //Won't show up on current guest list
         [HttpPost("leave-party")]
-        public async Task<IActionResult> GuestLeavesParty(string party_code, string guest_name, string user_name)
+        public async Task<IActionResult> LeaveParty(string party_code, string guest_name)
         {
-            List<String> paramsList = new List<String>(){guest_name, party_code, user_name};
+            List<String> paramsList = new List<String>(){guest_name, party_code};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            Guest new_guest_details = new Guest
+            //make sure the guest who is trying to leave is a validated user
+            var UN = GetValidatedUsername();
+            if(UN == null)
             {
-                username = user_name,
-                guest_name = guest_name,
-                party_code = party_code,
-                at_party = 0
-            };
-            var result = await _mediator.Send(new UpdateGuest.Command { Guest = new_guest_details });
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
+            }
+            var result = await _mediator.Send(new UpdateGuest.Command{ 
+                Party_code = party_code,
+                At_party = 0,
+                Username = UN
+            });
 
-            if(result == "Success!")
+            //if successfully removed, return success
+            if(result == Common.Constants.Constants.SuccessMessage)
             {
                 return StatusCode(200, new { message = result });
             }
 
-            return StatusCode(500, new { message = "Failed to remove guest from party in db" });
+            return StatusCode(500, new { message = Common.Constants.Constants.FailedToLeavePartyMessage });
         }
         #endregion
 
@@ -475,7 +434,7 @@ namespace Api.PartyController
                 return StatusCode(200, new { message = result });
             }
 
-            return StatusCode(500, new { message = "Failed to get Host and Guest objects from db" });
+            return StatusCode(500, new { message = Common.Constants.Constants.FailedToGetPartyObjectsMessage });
         }
 
         //End party (delete all guests and Host by party_code)
@@ -490,12 +449,12 @@ namespace Api.PartyController
 
            var result = await _mediator.Send(new EndParty.Command { Party_code = party_code });
 
-            if(result == "Success!")
+            if(result == Common.Constants.Constants.SuccessMessage)
             {
                 return StatusCode(200, new { message = result });
             }
 
-            return StatusCode(500, new { message = "Failed to get delete party from db" });
+            return StatusCode(500, new { message = Common.Constants.Constants.FailedToEndPartyMessage });
         }
         #endregion
 
@@ -511,14 +470,36 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            var result = await _mediator.Send(new AddFood.Command { Party_code = party_code, Item_name = item_name });
-
-            if(result == "Success!")
+            //make sure that the user trying to add food is validated as host for this party
+            Models.Host host = await _mediator.Send(new GetHost.Query() {Party_code = party_code});
+            var UN = GetValidatedUsername();
+            if(UN == null)
             {
-                List<Food> food_list = await _mediator.Send(new GetCurrentFoods.Query() {Party_code = party_code});
-                return StatusCode(200, new { message = food_list });
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
             }
+            if(host.username == UN)
+            {
+                var result = await _mediator.Send(new AddFood.Command { Party_code = party_code, Item_name = item_name });
 
+                if(result == Common.Constants.Constants.SuccessMessage)
+                {
+                    List<Food> food_list = await _mediator.Send(new GetCurrentFoods.Query() {Party_code = party_code});
+                    if(food_list != null)
+                    {
+                        return StatusCode(200, new { message = food_list });
+                    }
+                    //if it is empty, then there are no guests at that party
+                    else if(food_list == null)
+                    {
+                        return StatusCode(200, new { message = new List<Food>(){} });
+                    }
+                    return StatusCode(200, new { message = food_list });
+                }
+            }
+            else if (host.username != UN)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.MismatchedPartyToUserMessage });
+            }
             return StatusCode(500, new { message = "Failed to add food item for party in db" });
         }
 
@@ -532,13 +513,11 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            //get party that the food is being added to
-            //don't really need to do this unless we want to throw specific errors (which we do for now)
-            Models.Host corresponding_host = await _mediator.Send(new GetHost.Query() {Party_code = party_code});
-
-            if(corresponding_host == null)
+            //validate the party that we are checking the food list for exists
+            Models.Host host = await _mediator.Send(new GetHost.Query { Party_code = party_code });
+            if(host == null)
             {
-                return StatusCode(500, new { message = "Could not get food list, as that party does not exist" });
+                return StatusCode(500, new { message = Common.Constants.Constants.HostDoesntExistForFoodMessage });
             }
             else
             {
@@ -549,10 +528,10 @@ namespace Api.PartyController
                 {
                     return StatusCode(200, new { message = food_list });
                 }
-                else if(food_list == null) //if it is empty, then there are no food items at that party
+                //if it is empty, then there are no food items at that party
+                else if(food_list == null)
                 {
-                    //Should display on initial management page loads (guest and host) and when no items
-                    return StatusCode(200, new { message = "There are currently no food items at your party. Click the 'add food' button to add items available to guests." });
+                    return StatusCode(200, new { message = new List<Food>(){} });
                 }
             }
             
@@ -571,51 +550,48 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            var result = "false";
-
-            //valid status parameter - these are the only 3 valid statuses
-            //Todo: eventually move to enum?
+            //validate status parameter - these are the only 3 valid statuses
             if(status != "full" && status != "low" && status != "out")
             {
-                return StatusCode(500, new { message = "Status was invalid b/c it was not 'full', 'low', or 'out' " });
+                return StatusCode(500, new { message = Common.Constants.Constants.InvalidFoodStatusMessage });
             }
 
-            //get party that the food is being altered at
-            //don't really need to do this unless we want to throw specific errors (which we do for now)
-            Models.Host corresponding_host = await _mediator.Send(new GetHost.Query() {Party_code = party_code});
-
-            if(corresponding_host == null)
+            //validate the party that we are updating the food for exists
+            Models.Host host = await _mediator.Send(new GetHost.Query { Party_code = party_code });
+            if(host == null)
             {
-                return StatusCode(500, new { message = "Could not change food status for this party, as party does not exist in database" });
+                return StatusCode(500, new { message = Common.Constants.Constants.HostDoesntExistForFoodMessage });
             }
             else
             {
-                //change status of food item in db
-                result = await _mediator.Send(new UpdateFoodStatus.Command { Status = status, Item_name = item_name, Party_code = party_code });
+                //change status of food item in database
+                var result = await _mediator.Send(new UpdateFoodStatus.Command { Status = status, Item_name = item_name, Party_code = party_code });
+                if(result == Common.Constants.Constants.SuccessMessage)
+                {
+                    //if successfully updated status, text the guests to let them know
+
+                    //Todo: Get list of all Guests at this party (where at_party = 1) and their phone_numbers
+                    //or better yet, create a guest phone number list when creating party and just update
+                    //every time a guest checks in
+
+                    string text = item_name + " has been reported as status " + status + " by host.";
+                    //foreach guest, text
+                    //Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
+                    return StatusCode(200, new { message = result });
+                }
+                return StatusCode(500, new { message = "Failed to change food item status from host" });
             }
-
-            if(result == "Success!")
-            {
-                //if successfully updated status, text the guests to let them know
-
-                //Todo: Get list of all Guests at this party (where at_party = 1) and their phone_numbers
-                //or better yet, create a guest phone number list when creating party and just update
-                //every time a guest checks in
-
-                string text = item_name + " has been reported as status " + status + " by host.";
-                //foreach guest, text
-                //Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
-                return StatusCode(200, new { message = result });
-            }
-
-            return StatusCode(500, new { message = "Failed to change food item status from host" });
         }
 
         //Texts host when a guest reports food as low or out and updates status of item
         //Could re-use this endpoint and pass in "from host" value to determine whether to text host or guests
         //but that would be confusing to handle on front end
         [HttpPost("update-food-status-from-guest")]
-        public async Task<IActionResult> UpdateFoodStatusFromGuest(string party_code, string status, string guest_name, string item_name)
+        public async Task<IActionResult> UpdateFoodStatusFromGuest(
+            string party_code, 
+            string status, 
+            string guest_name, 
+            string item_name)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code, status, item_name};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
@@ -623,39 +599,36 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            //guest name should come from FE (guest management page)
-            var result = "false";
-
             //valid status parameter - these are the only 3 valid statuses
-            //Todo: eventually move to enum?
             if(status != "full" && status != "low" && status != "out")
             {
-                return StatusCode(500, new { message = "Status was invalid b/c it was not 'full', 'low', or 'out' " });
+                return StatusCode(500, new { message = Common.Constants.Constants.InvalidFoodStatusMessage });
             }
-            
-            //get party that the food is being altered at
-            //don't really need to do this unless we want to throw specific errors (which we do for now)
-            Models.Host corresponding_host = await _mediator.Send(new GetHost.Query() {Party_code = party_code});
 
-            if(corresponding_host == null)
+            //validate the party that we are updating the food for exists
+            Models.Host host = await _mediator.Send(new GetHost.Query { Party_code = party_code });
+            if(host == null)
             {
-                return StatusCode(500, new { message = "Could not report food status for this party, as party does not exist in database" });
+                return StatusCode(500, new { message = Common.Constants.Constants.HostDoesntExistForFoodMessage });
             }
             else
             {
-                //change status of food item in db
-                result = await _mediator.Send(new UpdateFoodStatus.Command { Status = status, Item_name = item_name, Party_code = party_code });
-            }
+                //change status of food item in database
+                var result = await _mediator.Send(new UpdateFoodStatus.Command {
+                    Status = status, 
+                    Item_name = item_name, 
+                    Party_code = party_code 
+                });
 
-            if(result == "Success!")
-            {
-                //if successfully updated status, text the host to let them know
-                // string text = guest_name + " reported " + item_name + " as " + status;
-                // Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
-                return StatusCode(200, new { message = result });
+                if(result == Common.Constants.Constants.SuccessMessage)
+                {
+                    //if successfully updated status, text the host to let them know
+                    // string text = guest_name + " reported " + item_name + " as " + status;
+                    // Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(corresponding_host.phone_number, text);
+                    return StatusCode(200, new { message = result });
+                }
+                return StatusCode(500, new { message = "Failed to report item status to host" });
             }
-
-            return StatusCode(500, new { message = "Failed to report item status to host" });
         }
 
         //Removes a row representing a food item from the Food table in DB
@@ -670,7 +643,7 @@ namespace Api.PartyController
 
             var result = await _mediator.Send(new DeleteFood.Command { Party_code = party_code, Item_name = item_name });
 
-            if(result == "Success!")
+            if(result == Common.Constants.Constants.SuccessMessage)
             {
                 List<Food> food_list = await _mediator.Send(new GetCurrentFoods.Query() {Party_code = party_code});
                 return StatusCode(200, new { message = food_list });
@@ -801,7 +774,6 @@ namespace Api.PartyController
             }
             return null;
         }
-        
         #endregion
     }
 }

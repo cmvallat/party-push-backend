@@ -4,6 +4,7 @@ using System.Data;
 using MySql.Data.MySqlClient;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using Common;
 
 namespace DataLayer;
 
@@ -18,20 +19,20 @@ public class PartyService : IPartyService
 
     #region Methods for Host APIs
 
-     public async Task<string> AddHost(Host host)
+     public async Task<string> AddHost(
+            string username,
+            string party_name, 
+            string party_code, 
+            string phone_number, 
+            //string spotify_device_id, 
+            int invite_only)
     {
-        string party_name = host.party_name;
-        string party_code = host.party_code;
-        string phone_number = host.phone_number;
-        string spotify_device_id = host.spotify_device_id;
-        int invite_only = host.invite_only;
-        string username = host.username;
-
         using(var connection = await _connectionFactory.GetConnection())
         {
             try{
             // Create the SQL statements you want to execute
-            var hostUpsertStatement = "INSERT INTO Host (username, party_name, party_code, phone_number, spotify_device_id, invite_only) VALUES (@username, @party_name, @party_code, @phone_number, @spotify_device_id, @invite_only)";
+            //Todo: eventually add spotify_device_id when implementing feature
+            var hostUpsertStatement = "INSERT INTO Host (username, party_name, party_code, phone_number, spotify_device_id, invite_only) VALUES (@username, @party_name, @party_code, @phone_number, 'n/a', @invite_only)";
 
             //parameterize the statement with values from the API
             MySqlCommand cmd = new MySqlCommand(hostUpsertStatement, connection);
@@ -39,7 +40,7 @@ public class PartyService : IPartyService
             cmd.Parameters.AddWithValue("@party_name", party_name);
             cmd.Parameters.AddWithValue("@party_code", party_code);
             cmd.Parameters.AddWithValue("@phone_number", phone_number);
-            cmd.Parameters.AddWithValue("@spotify_device_id", spotify_device_id);
+            //cmd.Parameters.AddWithValue("@spotify_device_id", spotify_device_id);
             cmd.Parameters.AddWithValue("@invite_only", invite_only);
 
             // Execute the command and get the number of rows affected, then close the connection
@@ -50,7 +51,7 @@ public class PartyService : IPartyService
             //if something was added to the db, return success
             if(rowsAffected != 0)
             {
-                return "Success!";
+                return Common.Constants.Constants.SuccessMessage;
             }
             
                 //if nothing was updated in the db, but not a SQL error, return generic error message
@@ -237,12 +238,8 @@ public class PartyService : IPartyService
         }
     }
 
-    public async Task<string> AddGuestFromCheckIn(Guest guest)
+    public async Task<string> AddGuestFromCheckIn(string username, string guest_name, string party_code, int at_party)
     {
-        string guest_name = guest.guest_name;
-        string party_code = guest.party_code;
-        int at_party = guest.at_party;
-
         using(var connection = await _connectionFactory.GetConnection())
         {
             try
@@ -250,10 +247,11 @@ public class PartyService : IPartyService
                 // Create the SQL statements you want to execute
                 //remember!!! party_code is a foreign key, so the guest needs to be joining an existing party
                 //meaning there needs to be an entry in Host with the same party_code
-                var guestInsertStatement = "INSERT INTO Guest (guest_name, party_code, at_party) VALUES (@guest_name, @party_code, @at_party)";
+                var guestInsertStatement = "INSERT INTO Guest (username, guest_name, party_code, at_party) VALUES (@username, @guest_name, @party_code, @at_party)";
 
                 //parameterize the statement with values from the API
                 MySqlCommand cmd = new MySqlCommand(guestInsertStatement, connection);
+                cmd.Parameters.AddWithValue("@username", username);
                 cmd.Parameters.AddWithValue("@guest_name", guest_name);
                 cmd.Parameters.AddWithValue("@party_code", party_code);
                 cmd.Parameters.AddWithValue("@at_party", at_party);
@@ -450,12 +448,12 @@ public class PartyService : IPartyService
         }
     }
 
-    public async Task<string> UpdateGuest(Guest guest)
+    public async Task<string> UpdateGuest(string party_code, int at_party, string username)
     {
-        string guest_name = guest.guest_name;
-        string party_code = guest.party_code;
-        int at_party = guest.at_party;
-        string username = guest.username;
+        // string guest_name = guest.guest_name;
+        // string party_code = guest.party_code;
+        // int at_party = guest.at_party;
+        // string username = guest.username;
 
         using(var connection = await _connectionFactory.GetConnection())
         {
@@ -501,29 +499,23 @@ public class PartyService : IPartyService
 
         using(var connection = await _connectionFactory.GetConnection())
         {
-            // Create the SQL statements you want to execute
-            //remember, party_code is a foreign key, so the guest needs to be at an existing party
-            //meaning there needs to be an entry in Host with the same party_code
-
             //MAKE SURE SQL_SAFE_UPDATES = 0 IN ORDER TO BE ABLE TO DELETE
-            //To do this in MySQLWorkbench, run: SET SQL_SAFE_UPDATES = 0;
-            var guestDeleteStatement = "DELETE FROM Guest WHERE guest_name = @Guest_name AND party_code = @Party_code AND username = Username";
-
-            //parameterize the statement with values from the API
-            MySqlCommand cmd = new MySqlCommand(guestDeleteStatement, connection);
-            cmd.Parameters.AddWithValue("@guest_name", Guest_name);
-            cmd.Parameters.AddWithValue("@party_code", Party_code);
-            cmd.Parameters.AddWithValue("@username", Username);
+            //call the stored procedure with parameters
+            MySqlCommand cmd = new MySqlCommand("DeleteGuest", connection);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@gn", Guest_name);
+            cmd.Parameters.AddWithValue("@pc", Party_code);
+            cmd.Parameters.AddWithValue("@un", Username);
 
             // Execute the command and get the number of rows affected, then close the connection
             // Todo: wrap in try block and handle errors in catch
-            int rowsAffected = cmd.ExecuteNonQuery();
+            int rowsAffected = cmmd.ExecuteNonQuery();
             connection.Close();
             
-            //if something was deleted from the db, return success
+            //if something was deleted from the database, return success
             if(rowsAffected != 0)
             {
-                return "Success!";
+                return Common.Constants.Constants.SuccessMessage;
             }
             
             //if nothing was deleted from the db, return error
