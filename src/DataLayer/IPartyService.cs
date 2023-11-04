@@ -13,7 +13,7 @@ public interface IPartyService
 
     //Guest functions
     Task<string> AddGuestFromHost(string guest_name, string party_code, string username);
-    Task<string> AddGuestFromCheckIn(string username, string guest_name, string party_code, int at_party);
+    Task<string> AddGuestFromCheckIn(string username, string guest_name, string party_code);
     Task<Guest> GetGuest(string party_code, string guest_name, string username);
     Task<List<Guest>> GetGuestsFromUser(string username);
     Task<List<Guest>> GetCurrentGuests(string party_code);

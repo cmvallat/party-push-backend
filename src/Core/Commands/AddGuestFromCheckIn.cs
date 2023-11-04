@@ -10,9 +10,6 @@ public class AddGuestFromCheckIn
 {
     public class Command : IRequest<string>
     {
-        // public string Guest_name { get; set; }
-        // public string Party_code { get; set; }
-        // public int Username { get; set; }
         public Models.Host Host { get; set; }
         public Models.Guest Guest { get; set; }
     }
@@ -45,15 +42,14 @@ public class AddGuestFromCheckIn
                     return await _dbService.AddGuestFromCheckIn(
                         invited_guest.username, 
                         invited_guest.guest_name, 
-                        invited_guest.party_code, 
-                        1
+                        invited_guest.party_code
                     );
                 }
 
                 //if they are already at the party (duplicate entry), don't let them in and throw error
                 else if(invited_guest.at_party == 1)
                 {
-                    return Common.Constants.Constants.GuestAlreadyAtPartyMessage;
+                    return Common.Constants.Constants.GuestAlreadyAtPartyCheckInMessage;
                 }
            }
             //otherwise, it is invite-only and we have to check if they are invited
@@ -70,7 +66,7 @@ public class AddGuestFromCheckIn
                     //if they are currently at the party, throw exception
                     else
                     {
-                        return Common.Constants.Constants.GuestAlreadyAtPartyMessage;
+                        return Common.Constants.Constants.GuestAlreadyAtPartyCheckInMessage;
                     }
                 }
                 //if they are not invited, throw exception (deny entry)
