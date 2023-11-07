@@ -446,7 +446,13 @@ namespace Api.PartyController
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
 
-            var result = await _mediator.Send(new GetPartyObjects.Query { Username = username });
+            var UN = GetValidatedUsername();
+            if(UN == null)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
+            }
+
+            var result = await _mediator.Send(new GetPartyObjects.Query { Username = UN });
 
             if(result != null)
             {
