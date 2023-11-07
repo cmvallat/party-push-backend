@@ -2,18 +2,27 @@ namespace Common.Constants
 {
     public class Constants
     {
+        public const string TwilioPhoneNumber = "+18449453925";
+        public const string UserNotTextedMessage = "Host created but user was not texted";
         //Status Code Messages (returned by PartyController endpoints)
         public const string SuccessMessage = "Success!";
         public const string FailedToInsertMessage = "Failed to insert Object into database";
         public const string UserNotValidatedMessage = "User could not be validated";
         public const string ParameterValidationMessage = "One or more parameters was missing";
+        public const string PhoneNumberValidationMessage = "Failed; Phone Number was invalid";
 
         //Exception Messages (thrown in PartyService)
         public const string DuplicateEntryMessage = "SQL Exception 1062: duplicate entry. Could not create object.";
         public const string GenericSqlExceptionMessage = "SQL Exception: Something went wrong";
         public const string GenericDatabaseErrorMessage = "General Database Exception: Something went wrong";
+        public const string GenericSystemExceptionMessage = "General System Exception in PartyService";
 
         //Specific exception messages
+
+        public const string FailedToGetHost = "Failed to get Host from database";
+
+
+
         public const string OpenInviteMessage = "Your party is open invite, no need to add guests! Just give them your party_code and tell them to check-in";
         public const string InvalidInviteOnlyValueMessage = "Something went wrong with the invite_only parameter not being either 0 or 1.";
         public const string CouldntFindHostMessage = "Couldn't find a party with this party code.";

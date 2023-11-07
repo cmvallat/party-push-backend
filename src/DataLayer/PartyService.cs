@@ -220,6 +220,10 @@ public class PartyService : IPartyService
                 // Handle other SQL errors if needed
                 return Common.Constants.Constants.GenericSqlExceptionMessage;
             }
+            catch(Exception ex)
+            {
+                return Common.Constants.Constants.GenericSystemExceptionMessage;
+            }
         }
     }
 
@@ -376,13 +380,14 @@ public class PartyService : IPartyService
             //call the stored procedure with parameters
             MySqlCommand cmd = new MySqlCommand("GetAllGuests", connection);
             cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddWithValue("@party_code", party_code);
+            cmd.Parameters.AddWithValue("@pc", party_code);
 
             // Execute the command and return the object, then close the connection
             List<Guest> returnedObj = new List<Guest>();
 
             using (MySqlDataReader reader = cmd.ExecuteReader())
             {
+                var x = 5;
                 while (reader.Read())
                 {
                     returnedObj.Add(new Guest(){
@@ -417,7 +422,7 @@ public class PartyService : IPartyService
                 //call the stored procedure with parameters
                 MySqlCommand cmd = new MySqlCommand("UpdateGuest", connection);
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@at", at_party);
+                cmd.Parameters.AddWithValue("@ap", at_party);
                 cmd.Parameters.AddWithValue("@un", username);
                 cmd.Parameters.AddWithValue("@pc", party_code);
 

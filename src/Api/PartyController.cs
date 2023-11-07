@@ -38,24 +38,18 @@ namespace Api.PartyController
     public class PartyController : ControllerBase
     {
         private IMediator _mediator;
-        //Todo: remove after testing
-        private IPartyService _dbService;
-
         public PartyController(IMediator mediator, IPartyService dbService)
         {
             _mediator = mediator;
-            //Todo: remove after testing
-            _dbService = dbService;
         }
 
         //Refactor notes:
-        //move logic to command
         //determine consistent spacing
         #region Host APIs
 
         //Create a party (add a Host object)
         //Todo: add more validation? phone number validation maybe?
-        //Todo: potentially remove spotify_device_id if not needed or make non-required
+        //Todo: add spotify_device_id back in when implementing Spotify feature
         [HttpPost("add-host")]
         public async Task<IActionResult> AddHost(
             string Party_name, 
@@ -94,17 +88,17 @@ namespace Api.PartyController
             if(result == Common.Constants.Constants.SuccessMessage)
             {
                 //on creation, text Host to confirm
-                //functionality will be added later. commented out for now
-
                 // string message = "Your party, " + Party_name + ", was successfully created!";
                 // var returnedString = Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(Phone_number, message);
+
+                //Todo: change to returnedString when texts implemented
                 return StatusCode(200, new { message = result });
             }
             return StatusCode(500, new { message = result });
         }
 
         //Search for a particular party (Host) in database
-        //Used only for internal purposes (other endpoints call it) so no need for password
+        //GetHost query used for other endpoints - do we need this endpoint?
         [HttpGet("get-host")]
         public async Task<IActionResult> GetHost(string party_code)
         {
@@ -121,7 +115,7 @@ namespace Api.PartyController
                 return StatusCode(200, new { message = host });
             }
 
-            return StatusCode(500, new { message = "Failed to get Host from db" });
+            return StatusCode(500, new { message = Common.Constants.Constants.FailedToGetHost });
         }
 
         //Search for a particular party (Host) in database
@@ -165,7 +159,8 @@ namespace Api.PartyController
         public async Task<IActionResult> AddGuestFromHost(
             int host_invite_only,
             string guest_name,
-            string party_code)
+            string party_code,
+            string guest_username)
         {
             List<String> paramsList = new List<String>(){guest_name, party_code};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
@@ -182,13 +177,17 @@ namespace Api.PartyController
             var host = await _mediator.Send(new GetHost.Query{Party_code = party_code});
             var result = Common.Constants.Constants.HostNotValidatedMessage;
 
+            if(host == null)
+            {
+                return StatusCode(500, new {message = Common.Constants.Constants.FailedToGetHost});
+            }
             //if the user is the host of the party, let them add the guest
-            if(host.username == UN)
+            else if(host.username == UN)
             {
                 result = await _mediator.Send(new AddGuestFromHost.Command{ 
                     Guest_name = guest_name, 
                     Party_code = party_code, 
-                    Username = UN,
+                    Username = guest_username,
                     Invite_only = host_invite_only 
                 });
 
@@ -354,17 +353,37 @@ namespace Api.PartyController
 
         //Remove a guest permanently from the party (only host can do this)
         [HttpPost("delete-guest")]
-        public async Task<IActionResult> DeleteGuest(string username, string guest_name, string party_code)
+        public async Task<IActionResult> DeleteGuest(string guest_username, string guest_name, string party_code)
         {
-            List<String> paramsList = new List<String>(){guest_name, party_code};
+            List<String> paramsList = new List<String>(){guest_username, guest_name, party_code};
             if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
             {
                 return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
             }
             
-            //this username is not validated because its not the username of the host deleting
-            //but instead the username of the guest to delete
-            var result = await _mediator.Send(new DeleteGuest.Command() {Party_code = party_code, Guest_name = guest_name, Username = username});
+            //get username (should be the host)
+            var UN = GetValidatedUsername();
+            if(UN == null)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
+            }
+            //validate the party that we are deleting the guest for exists
+            //and that the username matches
+            Models.Host host = await _mediator.Send(new GetHost.Query { Party_code = party_code });
+            if(host == null)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.HostDoesntExistForGuestMessage });
+            }
+            if(host.username != UN)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.MismatchedPartyToUserMessage});
+            }
+
+            var result = await _mediator.Send(new DeleteGuest.Command(){
+                Party_code = party_code, 
+                Guest_name = guest_name, 
+                Username = guest_username
+            });
 
             if(result == Common.Constants.Constants.SuccessMessage)
             {
