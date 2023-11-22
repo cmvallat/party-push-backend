@@ -462,6 +462,32 @@ namespace Api.PartyController
             return StatusCode(500, new { message = Common.Constants.Constants.FailedToGetPartyObjectsMessage });
         }
 
+        //Search for all the Guest and Food objects in database with particular party_code
+        [HttpGet("get-party-info")]
+        public async Task<IActionResult> GetPartyInfo(string party_code)
+        {
+            List<String> paramsList = new List<String>(){party_code};
+            if(Common.Validators.Validators.ValidateStringParameters(paramsList) == false)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.ParameterValidationMessage });
+            }
+
+            var UN = GetValidatedUsername();
+            if(UN == null)
+            {
+                return StatusCode(500, new { message = Common.Constants.Constants.UserNotValidatedMessage });
+            }
+
+            var result = await _mediator.Send(new GetPartyInfo.Query { Party_code = party_code });
+
+            if(result != null)
+            {
+                return StatusCode(200, new { message = result });
+            }
+
+            return StatusCode(500, new { message = Common.Constants.Constants.FailedToGetPartyInfoMessage });
+        }
+
         //End party (delete all guests and Host by party_code)
         [HttpPost("end-party")]
         public async Task<IActionResult> EndParty(string party_code)

@@ -36,6 +36,7 @@ namespace Common.Constants
         public const string FailedToLeavePartyMessage = "Failed to remove guest from party in database";
         public const string MismatchedPartyToUserMessage = "This is not your party to manage";
         public const string FailedToGetPartyObjectsMessage = "Failed to get Host and Guest objects from db";
+        public const string FailedToGetPartyInfoMessage = "Failed to get Guest and Food objects from db for this party";
         public const string FailedToEndPartyMessage = "Failed to get delete party from db";
         public const string InvalidFoodStatusMessage = "Status was invalid b/c it was not 'full', 'low', or 'out' ";
         //Todo: make error messages prettier to return for FE
