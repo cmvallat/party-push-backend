@@ -5,15 +5,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Queries;
 
-public class AllGuestsQuery
+public class GetGuest
 {
-    public class Query : IRequest<List<Guest>>
+    public class Query : IRequest<Guest>
     {
-        [Required]
         public string Party_code { get; set; }
+        public string Guest_name { get; set; }
+        public string Username { get; set; }
     }
 
-    public class Handler : IRequestHandler<Query, List<Guest>>
+    public class Handler : IRequestHandler<Query, Guest>
     {
         private readonly IPartyService _dbService;
 
@@ -22,9 +23,9 @@ public class AllGuestsQuery
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
         }
 
-        public async ValueTask<List<Guest>> Handle(Query query, CancellationToken cancellationToken)
+        public async ValueTask<Guest> Handle(Query query, CancellationToken cancellationToken)
         {
-            return await _dbService.GetAllGuestList(query.Party_code);
+            return await _dbService.GetGuest(query.Party_code, query.Guest_name, query.Username);
         }
     }
 }

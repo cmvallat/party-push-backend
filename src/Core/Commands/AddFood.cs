@@ -5,12 +5,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Commands;
 
-public class CreateParty
+public class AddFood
 {
     public class Command : IRequest<string>
     {
-        [Required]
-        public Host Host { get; set; }
+        public string Item_name { get; set; }
+        public string Party_code { get; set; }
     }
 
     public class Handler : IRequestHandler<Command, string>
@@ -24,7 +24,7 @@ public class CreateParty
 
         public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.CreateParty(request.Host);
+            return await _dbService.AddFood(request.Party_code, request.Item_name);
         }
     }
 }

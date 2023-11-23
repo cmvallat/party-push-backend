@@ -5,14 +5,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Commands;
 
-public class AddFoodItem
+public class AddUser
 {
     public class Command : IRequest<string>
     {
-        [Required]
-        public string Item_name { get; set; }
-        [Required]
-        public string Party_code { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public string Phone_Number { get; set; }
     }
 
     public class Handler : IRequestHandler<Command, string>
@@ -26,7 +25,7 @@ public class AddFoodItem
 
         public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.AddFoodItem(request.Party_code, request.Item_name);
+            return await _dbService.AddUser(request.Username, request.Password, request.Phone_Number);
         }
     }
 }

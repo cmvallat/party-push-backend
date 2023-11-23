@@ -3,6 +3,9 @@ using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
 using System.Net;
 using DataLayer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,19 @@ builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
+    options.TokenValidationParameters = new TokenValidationParameters {
+        ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = "https://localhost:5001/",
+            ValidAudience = "https://localhost:5001/",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("6xGrJLpenwmJXCIAlLPbdfbgctrbgvrtgcrtdbgvgrdffvxrsvfdfrcvftryr65gr4sdrger"))
+    };
+});
 
 builder.Services.AddCors(options =>
 {
@@ -41,6 +57,8 @@ app.UseCors(options =>
            .WithExposedHeaders("x-filesize")
            .WithExposedHeaders("access-control-allow-origin");
 });
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

@@ -5,15 +5,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Core.Commands;
 
-public class ChangeFoodStatus
+public class UpdateFoodStatus
 {
     public class Command : IRequest<string>
     {
-        [Required]
         public string Status { get; set; }
-        [Required]
         public string Item_name { get; set; }
-        [Required]
         public string Party_code { get; set; }
     }
 
@@ -28,7 +25,7 @@ public class ChangeFoodStatus
 
         public async ValueTask<string> Handle(Command request, CancellationToken cancellationToken)
         {
-            return await _dbService.ChangeFoodStatus(request.Party_code, request.Status, request.Item_name);
+            return await _dbService.UpdateFoodStatus(request.Party_code, request.Status, request.Item_name);
         }
     }
 }

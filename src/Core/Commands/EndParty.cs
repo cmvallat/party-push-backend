@@ -9,7 +9,6 @@ public class EndParty
 {
     public class Command : IRequest<string>
     {
-        [Required]
         public string Party_code { get; set; }
     }
 
