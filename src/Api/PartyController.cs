@@ -729,6 +729,8 @@ namespace Api.PartyController
             }
             else if(result == "Success!")
             {
+                // string message = "You have officially joined PartyPush!";
+                // var returnedString = Common.TextMessagingHelpers.TextMessagingHelpers.SendSMSMessage(phone_number, message);
                 return await GetJWT(username, password);
             }
             else

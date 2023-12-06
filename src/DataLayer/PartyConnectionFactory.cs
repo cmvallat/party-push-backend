@@ -23,7 +23,7 @@ namespace DataLayer
 
             // Set up connection string with server, database, user, and password
             //string connString = "wouldntyouliketoknowweatherboy(thiswillbecorrectlocally)";
-            var conn = new MySqlConnection("server=party-resources.crurrv9mzw4i.us-west-1.rds.amazonaws.com;port=3306;database=Party;user=cmvallat;password=Gdtbath21");
+            var conn = new MySqlConnection("server=partydb.cvjsqanfgbfz.us-east-1.rds.amazonaws.com;port=3306;database=party;user=cvallat;password=Gdtbath21!");
             conn.Open();
             return conn;
         }
