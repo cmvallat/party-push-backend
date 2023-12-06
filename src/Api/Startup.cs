@@ -20,8 +20,17 @@ namespace MyNamespace
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowSpecificOrigin",
-                    builder => builder.WithOrigins("http://localhost:3000"));
-            });
+                    builder => builder
+                    .WithOrigins(
+                        "http://localhost:3000",
+                        "http://54.208.105.152:3000",
+                        "https://livepartyhelper.com",
+                        "https://www.livepartyhelper.com",
+                        "https://api.twilio.com",
+                        "http://api.twilio.com")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+                });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

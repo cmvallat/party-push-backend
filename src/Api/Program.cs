@@ -34,7 +34,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
-        builder => builder.WithOrigins("http://localhost:3000"));
+        builder => builder
+        .WithOrigins("http://localhost:3000",
+                    "http://54.208.105.152:3000",
+                    "https://livepartyhelper.com",
+                    "https://www.livepartyhelper.com",
+                    "https://api.twilio.com",
+                    "http://api.twilio.com"));
 });
 
 var app = builder.Build();
@@ -46,7 +52,12 @@ app.UseHttpsRedirection();
 
 app.UseCors(options =>
 {
-    options.WithOrigins("http://localhost:3000")
+    options.WithOrigins("http://localhost:3000",
+                    "http://54.208.105.152:3000",
+                    "https://livepartyhelper.com",
+                    "https://www.livepartyhelper.com",
+                    "https://api.twilio.com",
+                    "http://api.twilio.com")
            .WithHeaders("X-Requested-With", "Content-Type", "Accept", "Authorization")
            .WithMethods("GET", "POST", "PUT", "DELETE")
            .WithExposedHeaders("content-disposition")

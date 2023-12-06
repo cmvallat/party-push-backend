@@ -2,7 +2,7 @@ namespace Common.Constants
 {
     public class Constants
     {
-        public const string TwilioPhoneNumber = "+18449453925";
+        public const string TwilioPhoneNumber = "+12242577125";
         public const string UserNotTextedMessage = "Host created but user was not texted";
         //Status Code Messages (returned by PartyController endpoints)
         public const string SuccessMessage = "Success!";
