@@ -1,34 +1,32 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-      {
-        "name": ".NET Core Launch (web)",
-        "type": "coreclr",
-        "request": "launch",
-        "preLaunchTask": "build-api",
-        //bin/Debug/net6.0/MyWebApp.dll
-        //specify ${workspaceFolder} so nick can run
-        "program": "${workspaceFolder}/src/Api/bin/Debug/net6.0/Api.dll",
-        "args": [],
-        "cwd": "${workspaceFolder}",
-        "stopAtEntry": false,
-        "serverReadyAction": {
-          "action": "openExternally",
-          "pattern": "^\\s*Now listening on:\\s+(https?://\\S+)"
-        },
-        "env": {
-          "ASPNETCORE_ENVIRONMENT": "Development"
-        },
-        "sourceFileMap": {
-          "/Views": "${workspaceFolder}/Views"
-        }
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (web)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-api",
+      //bin/Debug/net6.0/MyWebApp.dll
+      "program": "${workspaceFolder}/src/Api/bin/Debug/net6.0/Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "^\\s*Now listening on:\\s+(https?://\\S+)"
       },
-      {
-        "name": ".NET Core Attach",
-        "type": "coreclr",
-        "request": "attach",
-        "processId": "${command:pickProcess}"
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/Views"
       }
-    ]
-  }
-  
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    }
+  ]
+}
