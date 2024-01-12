@@ -27,7 +27,13 @@ namespace MyNamespace
                         "https://livepartyhelper.com",
                         "https://www.livepartyhelper.com",
                         "https://api.twilio.com",
-                        "http://api.twilio.com")
+                        "http://api.twilio.com",
+                        "http://party-push-backend.us-east-1.elasticbeanstalk.com",
+                        "https://party-push-backend.us-east-1.elasticbeanstalk.com",
+                        "party-push-backend.us-east-1.elasticbeanstalk.com",
+                        "http://party-push.us-east-1.elasticbeanstalk.com",
+                        "https://party-push.us-east-1.elasticbeanstalk.com",
+                        "party-push.us-east-1.elasticbeanstalk.com")
                     .AllowAnyHeader()
                     .AllowAnyMethod());
                 });
