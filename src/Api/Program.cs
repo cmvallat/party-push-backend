@@ -25,8 +25,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "https://localhost:5001/",
-            ValidAudience = "https://localhost:5001/",
+            ValidIssuer = "http://party-push-backend.us-east-1.elasticbeanstalk.com/",
+            ValidAudience = "http://party-push-backend.us-east-1.elasticbeanstalk.com/",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("6xGrJLpenwmJXCIAlLPbdfbgctrbgvrtgcrtdbgvgrdffvxrsvfdfrcvftryr65gr4sdrger"))
     };
 });
@@ -40,7 +40,13 @@ builder.Services.AddCors(options =>
                     "https://livepartyhelper.com",
                     "https://www.livepartyhelper.com",
                     "https://api.twilio.com",
-                    "http://api.twilio.com"));
+                    "http://api.twilio.com",
+                    "http://party-push-backend.us-east-1.elasticbeanstalk.com",
+                    "https://party-push-backend.us-east-1.elasticbeanstalk.com",
+                    "party-push-backend.us-east-1.elasticbeanstalk.com",
+                    "http://party-push.us-east-1.elasticbeanstalk.com",
+                    "https://party-push.us-east-1.elasticbeanstalk.com",
+                    "party-push.us-east-1.elasticbeanstalk.com"));
 });
 
 var app = builder.Build();
@@ -57,7 +63,13 @@ app.UseCors(options =>
                     "https://livepartyhelper.com",
                     "https://www.livepartyhelper.com",
                     "https://api.twilio.com",
-                    "http://api.twilio.com")
+                    "http://api.twilio.com",
+                    "http://party-push-backend.us-east-1.elasticbeanstalk.com",
+                    "https://party-push-backend.us-east-1.elasticbeanstalk.com",
+                    "party-push-backend.us-east-1.elasticbeanstalk.com",
+                    "http://party-push.us-east-1.elasticbeanstalk.com",
+                    "https://party-push.us-east-1.elasticbeanstalk.com",
+                    "party-push.us-east-1.elasticbeanstalk.com")
            .WithHeaders("X-Requested-With", "Content-Type", "Accept", "Authorization")
            .WithMethods("GET", "POST", "PUT", "DELETE")
            .WithExposedHeaders("content-disposition")
