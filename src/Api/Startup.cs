@@ -50,8 +50,12 @@ namespace Api
                             "http://54.208.105.152:3000",
                             "https://livepartyhelper.com",
                             "https://www.livepartyhelper.com",
+                            "http://party-push-backend.us-east-1.elasticbeanstalk.com",
+                            "https://party-push-backend.us-east-1.elasticbeanstalk.com",
+                            "party-push-backend.us-east-1.elasticbeanstalk.com",
                             "http://party-push.us-east-1.elasticbeanstalk.com",
-                            // "https://party-push.us-east-1.elasticbeanstalk.com",
+                            "https://party-push.us-east-1.elasticbeanstalk.com",
+                            "party-push.us-east-1.elasticbeanstalk.com"
                             "https://api.twilio.com",
                             "http://api.twilio.com")
                         .AllowAnyHeader()
@@ -67,8 +71,8 @@ namespace Api
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-                        ValidIssuer = "http://party-push.us-east-1.elasticbeanstalk.com",
-                        ValidAudience = "http://party-push.us-east-1.elasticbeanstalk.com",
+                        ValidIssuer = "http://party-push-backend.us-east-1.elasticbeanstalk.com",
+                        ValidAudience = "http://party-push-backend.us-east-1.elasticbeanstalk.com",
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("6xGrJLpenwmJXCIAlLPbdfbgctrbgvrtgcrtdbgvgrdffvxrsvfdfrcvftryr65gr4sdrger"))
                     };
                 });
