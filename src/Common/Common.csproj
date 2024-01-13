@@ -2,17 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>10.0</LangVersion>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Twilio" Version="6.7.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- <ProjectReference Include="..\DataLayer\DataLayer.csproj" /> -->
   </ItemGroup>
 
 </Project>
