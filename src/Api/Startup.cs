@@ -14,8 +14,6 @@ using Microsoft.OpenApi.Models;
 using System;
 using MediatR;
 
-
-
 namespace Api
 {
     public class Startup
