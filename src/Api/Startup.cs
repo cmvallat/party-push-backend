@@ -55,7 +55,7 @@ namespace Api
                             "party-push-backend.us-east-1.elasticbeanstalk.com",
                             "http://party-push.us-east-1.elasticbeanstalk.com",
                             "https://party-push.us-east-1.elasticbeanstalk.com",
-                            "party-push.us-east-1.elasticbeanstalk.com"
+                            "party-push.us-east-1.elasticbeanstalk.com",
                             "https://api.twilio.com",
                             "http://api.twilio.com")
                         .AllowAnyHeader()
